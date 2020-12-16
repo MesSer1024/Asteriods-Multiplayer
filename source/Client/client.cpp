@@ -78,14 +78,12 @@ int main()
         return false;
     }
 
-    net::Socket socket;
-
-    if (!net::CreateSocket(&socket))
+    net::Socket socket = net::CreateSocket();
+    if(!socket)
     {
         printf("CreateSocket failed\n");
         return false;
     }
-
 
     //Socket stuffs :-)
     NetworkPacket sharedPacket(c_socket_buffer_size);

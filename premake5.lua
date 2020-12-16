@@ -53,6 +53,7 @@ project "Server"
    
    filter { "configurations:Debug" }
 	defines { "FAKE_LAG" } 
+	filter {}
 
    links { "Shared" }
    links { 

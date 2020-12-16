@@ -66,19 +66,16 @@ void main()
 		return;
 	}
 
-	net::Socket socket;
-	if (!net::CreateSocket(&socket))
-	{
-		printf("CreateSocket failed\n");
-		return;
-	}
-
+	
 	net::NetworkIP local_endpoint = {};
 	local_endpoint.address = INADDR_ANY;
 	local_endpoint.port = c_port;
-	if (!net::socket_bind(&socket, &local_endpoint))
+
+	net::Socket socket = net::CreateSocket();
+	bool binded = socket ? net::BindSocket(socket, local_endpoint) : false;
+	if (!binded)
 	{
-		printf("socket_bind failed");
+		printf("Failed to bind or create socket \n");
 		return;
 	}
 
@@ -201,14 +198,14 @@ void main()
 			case Client_Message::Input:
 			{
 				u8 clientId;
-				memcpy(&clientId, &outBuffer[1], sizeof(&outBuffer[1]));
+				memcpy(&clientId, &inBuffer[1], sizeof(&inBuffer[1]));
 
 
 
 				//Check so that the ID matches where it comes from
 				if (client_endpoints[clientId] == from)
 				{
-					u8 input = outBuffer[2];
+					u8 input = inBuffer[2];
 
 					client_inputs[clientId].thrust = input & 0x1;
 					client_inputs[clientId].rotateLeft = input & 0x2;

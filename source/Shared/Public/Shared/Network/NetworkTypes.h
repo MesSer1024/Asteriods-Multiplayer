@@ -59,7 +59,9 @@ namespace asteroids
 
 		struct Socket
 		{
-			SOCKET handle;
+			SOCKET handle{};
+
+			operator bool() const { return handle != SOCKET{}; }
 		};
 
 
@@ -76,7 +78,7 @@ namespace asteroids
 			return true;
 		}
 
-		static bool CreateSocket(Socket* out_socket)
+		static Socket CreateSocket()
 		{
 			int address_family = AF_INET;
 			int type = SOCK_DGRAM;
@@ -85,8 +87,8 @@ namespace asteroids
 
 			if (sock == INVALID_SOCKET)
 			{
-				log_warning("socket failed: %d\n", WSAGetLastError());
-				return false;
+				log_warning("outSocket failed: %d\n", WSAGetLastError());
+				return Socket{};
 			}
 
 			// put socket in non-blocking mode
@@ -95,11 +97,34 @@ namespace asteroids
 			if (result == SOCKET_ERROR)
 			{
 				log_warning("ioctlsocket failed: %d\n", WSAGetLastError());
+				return Socket{};
+			}
+
+			// create socket
+			Socket out_socket;
+			out_socket.handle = sock;
+			return out_socket;
+		}
+
+		static bool BindSocket(Socket& outSocket, NetworkIP local_endpoint)
+		{
+			auto endpointToSocket = [](const NetworkIP& endpoint)->SOCKADDR_IN {
+				SOCKADDR_IN sockaddr_in;
+				sockaddr_in.sin_family = AF_INET;
+				sockaddr_in.sin_addr.s_addr = htonl(endpoint.address);
+				sockaddr_in.sin_port = htons(endpoint.port);
+				return sockaddr_in;
+			};
+
+			// bind socket
+			SOCKADDR_IN localSocket = endpointToSocket(local_endpoint);
+			if (bind(outSocket.handle, (SOCKADDR*)&localSocket, sizeof(localSocket)) == SOCKET_ERROR)
+			{
+				log_warning("bind failed: %d\n", WSAGetLastError());
+				outSocket.handle = 0;
 				return false;
 			}
 
-			*out_socket = {};
-			out_socket->handle = sock;
 			return true;
 		}
 
