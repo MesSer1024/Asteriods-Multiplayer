@@ -28,7 +28,7 @@ workspace "AsteroidsMP"
 	  
 
    filter { "configurations:Debug" }
-      defines { "DEBUG" }
+      defines { "DEBUG", "PACKAGE_LOSS" }
       runtime "Debug"
       staticruntime "on"
       symbols "On"
@@ -50,6 +50,9 @@ project "Shared"
 project "Server"
    kind "ConsoleApp"
    targetdir "bin/%{cfg.buildcfg}"
+   
+   filter { "configurations:Debug" }
+	defines { "FAKE_LAG" } 
 
    links { "Shared" }
    links { 
