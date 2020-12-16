@@ -62,9 +62,16 @@ function DeclareTestProject(identifier)
 	links { "GoogleTest" }
 end
 
-function AddDependency(name)
+function AddOneDependency(name)
 	links { name }
 	includedirs { "source/" .. name .. "/Public" }
+end
+
+function AddDependency(...)
+   local arg = {...}
+   for i,v in ipairs(arg) do
+      AddOneDependency(v)
+   end
 end
 
 function AddLinkToSFML()
@@ -109,8 +116,7 @@ group "Asteroids"
 
 	DeclareProject("Server", "ConsoleApp")
 		targetname "AsteroidsServer"
-		AddDependency("Shared")
-		AddDependency("Network")
+		AddDependency("Shared", "Network")
 		AddLinkToSFML()
 		filter { "configurations:Debug" }
 			defines { "FAKE_LAG" } 
@@ -118,8 +124,7 @@ group "Asteroids"
 
 	DeclareProject("Client", "ConsoleApp")
 	   targetname "AsteroidsClient"
-	   AddDependency("Shared")
-	   AddDependency("Network")
+	   AddDependency("Shared", "Network")
 	   AddLinkToSFML()
 group "" 
 -- </AsteroidsProjects>
