@@ -244,7 +244,7 @@ TEST(bitword_fixture, modifyBit_sameAsSetAndClear)
 		{
 			BitWordType bitsFromCleared, modifiedCleared;
 			modifiedCleared = bitsFromCleared = 0xF7F7f7f7f7f7f7f7;
-			bitword::setBit(bitsFromCleared, i);
+			bitword::clearBit(bitsFromCleared, i);
 			bitword::modifyBit(modifiedCleared, i, false);
 
 			ASSERT_EQ(bitsFromCleared, modifiedCleared);
