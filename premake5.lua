@@ -6,6 +6,35 @@ function os.winSdkVersion()
     if sdk_version ~= nil then return sdk_version end
 end
 
+function DeclareProject(name)
+	project (name)
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	files { "source/" .. name .. "/**" }
+	includedirs { "source/" .. name, "source/" .. name .. "/Public"  }
+end
+
+function AddDependency(name)
+	links { name }
+	includedirs { "source/" .. name .. "/Public" }
+end
+
+--
+--  project "Network.Test"
+--    kind "ConsoleApp"
+--    defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
+--	targetdir "bin/%{cfg.buildcfg}"
+	
+--    files { "source/Network.Test/**" }
+
+--    links { "Network", "GoogleTest" }
+--	includedirs { 
+--		"source/Network.Test", 
+--		"source/Network/Public", 
+--		"source/Network", 
+--		"ExternalLibs/googletest/include" 
+--	} 
+
 -- ///////////////////////////////////////
 
 workspace "AsteroidsMP"
@@ -60,7 +89,7 @@ group "Library"
 	includedirs { "source/Network/Public", "source/Network" }
 	defines { "BUILD_EXPORT_NETWORK_MODULE"}
 
-group "Library/Tests"
+group "Library/Tests"	 
   project "Network.Test"
     kind "ConsoleApp"
     defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
@@ -78,13 +107,8 @@ group "Library/Tests"
 group "" -- leave Library-group
 
 group "Asteroids"
-	project "Shared"
-	   targetdir "bin/%{cfg.buildcfg}"
-	   includedirs { "source/Network/Public", "source/Shared/", "source/Shared/Public/" }
-
-	   files { "source/Shared/**.*"}
-	   
-	   links { "Network" }
+	DeclareProject("Shared")
+		AddDependency("Network")
 
 	project "Server"
 	   kind "ConsoleApp"
