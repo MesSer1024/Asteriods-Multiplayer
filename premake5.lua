@@ -9,35 +9,35 @@ end
 -- <Workspace Settings>
 
 workspace "AsteroidsMP"
-   filter {"system:windows", "action:vs*"}
-      systemversion(os.winSdkVersion() .. ".0")
-
-   filename "AsteroidsMP"
-   language "C++"
-   configurations { "Debug", "Release" }
-   platforms { "Static" }
-   architecture "x64"   
+	filename "AsteroidsMP"
+	language "C++"
+	configurations { "Debug", "Release" }
+	platforms { "Static" }
+	architecture "x64"   
 	cppdialect "C++17"
-   location "local"
+	location "local" --output folder
 
-   libdirs { "ExternalLibs/SFML-2.5.1/lib/" }
+	libdirs { "ExternalLibs/SFML-2.5.1/lib/" }
 
-   filter { "platforms:Static" }
-       kind "StaticLib"
-       defines { "COMPILING_STATIC" }
+	filter { "platforms:Static" }
+	   kind "StaticLib"
+	   defines { "COMPILING_STATIC" }
 	   
-   filter { "configurations:Debug" }
-      defines { "DEBUG", "PACKAGE_LOSS" }
-      runtime "Debug"
-      staticruntime "on"
-      symbols "On"
+	filter { "configurations:Debug" }
+	  defines { "DEBUG", "PACKAGE_LOSS" }
+	  runtime "Debug"
+	  staticruntime "on"
+	  symbols "On"
 
-   filter {"configurations:Release"}
-      defines { "RELEASE" }
-      runtime "Release"      
-      staticruntime "on"
-      optimize "On"
-      symbols "On"
+	filter {"configurations:Release"}
+	  defines { "RELEASE" }
+	  runtime "Release"      
+	  staticruntime "on"
+	  optimize "On"
+	  symbols "On"
+	  
+	filter {"system:windows", "action:vs*"}
+		systemversion(os.winSdkVersion() .. ".0")
 -- </Workspace Settings>
 
 -- <UtilityFunctions>
@@ -58,9 +58,7 @@ function DeclareTestProject(identifier)
 	targetdir "bin/%{cfg.buildcfg}"
 	
 	files { "source/" .. identifier .. "/**" }
-	includedirs { "source/" .. identifier, "ExternalLibs/googletest/include" }
-	
-		
+	includedirs { "source/" .. identifier, "ExternalLibs/googletest/include" }		
 	links { "GoogleTest" }
 end
 
