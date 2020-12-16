@@ -6,36 +6,7 @@ function os.winSdkVersion()
     if sdk_version ~= nil then return sdk_version end
 end
 
-function DeclareProject(name)
-	project (name)
-	targetdir "bin/%{cfg.buildcfg}"
-	
-	files { "source/" .. name .. "/**" }
-	includedirs { "source/" .. name, "source/" .. name .. "/Public"  }
-end
-
-function AddDependency(name)
-	links { name }
-	includedirs { "source/" .. name .. "/Public" }
-end
-
---
---  project "Network.Test"
---    kind "ConsoleApp"
---    defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
---	targetdir "bin/%{cfg.buildcfg}"
-	
---    files { "source/Network.Test/**" }
-
---    links { "Network", "GoogleTest" }
---	includedirs { 
---		"source/Network.Test", 
---		"source/Network/Public", 
---		"source/Network", 
---		"ExternalLibs/googletest/include" 
---	} 
-
--- ///////////////////////////////////////
+-- <Workspace Settings>
 
 workspace "AsteroidsMP"
    filter {"system:windows", "action:vs*"}
@@ -55,8 +26,6 @@ workspace "AsteroidsMP"
        kind "StaticLib"
        defines { "COMPILING_STATIC" }
 	   
-	  
-
    filter { "configurations:Debug" }
       defines { "DEBUG", "PACKAGE_LOSS" }
       runtime "Debug"
@@ -69,8 +38,50 @@ workspace "AsteroidsMP"
       staticruntime "on"
       optimize "On"
       symbols "On"
+-- </Workspace Settings>
 
--- Done with global project settings
+-- <UtilityFunctions>
+function DeclareProject(identifier, projectType)
+	project (identifier)
+	if projectType ~= nil then kind (projectType) else kind ("StaticLib") end
+	
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	files { "source/" .. identifier .. "/**" }
+	includedirs { "source/" .. identifier, "source/" .. identifier .. "/Public"  }
+end
+
+function DeclareTestProject(identifier)
+	project (identifier)
+	kind "ConsoleApp"
+	
+	targetdir "bin/%{cfg.buildcfg}"
+	
+	files { "source/" .. identifier .. "/**" }
+	includedirs { "source/" .. identifier, "ExternalLibs/googletest/include" }
+	
+		
+	links { "GoogleTest" }
+end
+
+function AddDependency(name)
+	links { name }
+	includedirs { "source/" .. name .. "/Public" }
+end
+
+function AddLinkToSFML()
+	   links { 
+		"winmm.lib", "wsock32.lib", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
+		
+		includedirs { "ExternalLibs/SFML-2.5.1/include" }
+end		
+-- </UtilityFunctions>
+
+-- <ExternalProjects>
 group "_External"
 
   project "GoogleTest"
@@ -78,88 +89,39 @@ group "_External"
     files { "ExternalLibs/googletest/src/gtest-all.cc" }
     includedirs { "ExternalLibs/googletest/include", "ExternalLibs/googletest" }
 
-group ""  -- leave External-group
+group ""
+-- </ExternalProjects>
 	  
-
+-- <LibraryProjects>
 group "Library"
-	project "Network"
-	kind "StaticLib"
-	files { "source/Network/**" }
+	DeclareProject("Network", "StaticLib")
+		defines { "BUILD_EXPORT_NETWORK_MODULE"}
 
-	includedirs { "source/Network/Public", "source/Network" }
-	defines { "BUILD_EXPORT_NETWORK_MODULE"}
-
-group "Library/Tests"	 
-  project "Network.Test"
-    kind "ConsoleApp"
-    defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
-	targetdir "bin/%{cfg.buildcfg}"
-	
-    files { "source/Network.Test/**" }
-
-    links { "Network", "GoogleTest" }
-	includedirs { 
-		"source/Network.Test", 
-		"source/Network/Public", 
-		"source/Network", 
-		"ExternalLibs/googletest/include" 
-	}
+	group "Library/Tests"	 
+		DeclareTestProject("Network.Test")
+		AddDependency("Network")
+		defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
 group "" -- leave Library-group
+-- </LibraryProjects>
 
+-- <AsteroidsProjects>
 group "Asteroids"
-	DeclareProject("Shared")
+	DeclareProject("Shared", "StaticLib")
 		AddDependency("Network")
 
-	project "Server"
-	   kind "ConsoleApp"
-	   targetdir "bin/%{cfg.buildcfg}"
-	   targetname "Asteroids Server"
-	   
-	   filter { "configurations:Debug" }
-		defines { "FAKE_LAG" } 
+	DeclareProject("Server", "ConsoleApp")
+		targetname "AsteroidsServer"
+		AddDependency("Shared")
+		AddDependency("Network")
+		AddLinkToSFML()
+		filter { "configurations:Debug" }
+			defines { "FAKE_LAG" } 
 		filter {}
 
-	   links { "Shared", "Network" }
-	   links { 
-		"winmm.lib", "wsock32.lib", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
-		
-		includedirs { "ExternalLibs/SFML-2.5.1/include" }
-		
-	   includedirs {  
-			"source/Network/Public",
-			"source/Server/", 
-			"source/Server/Public/", 
-			"source/Shared/Public/" 
-		}
-
-	   files { "source/Server/**.*" }
-
-	project "Client"
-	   kind "ConsoleApp"
-	   targetdir "bin/%{cfg.buildcfg}"
-	   targetname "Asteroids Client"
-
-	   links { "Shared", "Network" }
-
-	   links { 
-		"winmm.lib", "wsock32.lib", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
-		"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
-		
-
-		includedirs { "ExternalLibs/SFML-2.5.1/include" }
-	   includedirs { 
-	    "source/Network/Public",
-		"source/Client/", 
-		"source/Client/Public/",
-		"source/Shared/Public/"
-	   }
-
-	   files { "source/Client/**.*" }
-group "" -- leave Asteroids-scope
+	DeclareProject("Client", "ConsoleApp")
+	   targetname "AsteroidsClient"
+	   AddDependency("Shared")
+	   AddDependency("Network")
+	   AddLinkToSFML()
+group "" 
+-- </AsteroidsProjects>
