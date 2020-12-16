@@ -41,7 +41,7 @@ workspace "AsteroidsMP"
       symbols "On"
 
 project "Shared"
-   targetdir "local/Shared/%{cfg.buildcfg}"
+   targetdir "bin/%{cfg.buildcfg}"
    includedirs { "source/Shared/", "source/Shared/Public/" }
 
    files { "source/Shared/**.*"}
@@ -49,7 +49,7 @@ project "Shared"
 
 project "Server"
    kind "ConsoleApp"
-   targetdir "local/Server/%{cfg.buildcfg}"
+   targetdir "bin/%{cfg.buildcfg}"
 
    links { "Shared" }
    links { 
@@ -71,7 +71,7 @@ project "Server"
 
 project "Client"
    kind "ConsoleApp"
-   targetdir "local/Client/%{cfg.buildcfg}"
+   targetdir "bin/%{cfg.buildcfg}"
 
    links { "Shared" }
 

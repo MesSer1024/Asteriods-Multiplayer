@@ -4,7 +4,7 @@
 *.db-shm
 *.opendb
 *.ipch
-.vs/Asteroids Multiplayer/v16/.suo
+.vs/*
 *.filters
 *.user
 *.log
@@ -19,3 +19,6 @@
 *.sln
 *.iobj
 *.ipdb
+./local/*
+./bin/*
+!./bin/*.dll

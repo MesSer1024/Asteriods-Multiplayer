@@ -182,17 +182,17 @@ int main()
 
                 uint8 success;
                 //Deserialize first uint8 of message (Message type)
-                deserialise_u8(&buffer_iter, &message_type);
+                deserialize_u8(&buffer_iter, &message_type);
 
 
                 //Deserilize second uint8 of message (Success or not)
-                deserialise_u8(&buffer_iter, &success);
+                deserialize_u8(&buffer_iter, &success);
 
                 //If join was a success
                 if (success)
                 {
                     //Deserilize third uint8 of message (ID)
-                    deserialise_u8(&buffer_iter, &clientId);
+                    deserialize_u8(&buffer_iter, &clientId);
                 }
 
                 printf("Joined server with ClientID = %d\n", clientId);
@@ -231,28 +231,28 @@ int main()
                     uint32 bytes_read = 0;
 
                     //Get message type
-                    deserialise_u8(&buffer_iter, &message_type);
+                    deserialize_u8(&buffer_iter, &message_type);
                     bytes_read++;
 
                     while (bytes_read < bytes_received)
                     {
                         //Get client ID
-                        deserialise_u8(&buffer_iter, &bufferClientId);
+                        deserialize_u8(&buffer_iter, &bufferClientId);
                         bytes_read++;
 
                         //Get positionX
-                        deserialise_f32(&buffer_iter, &bufferPositionX);
+                        deserialize_f32(&buffer_iter, &bufferPositionX);
                         bytes_read += 4;
 
                         //Get positionY
-                        deserialise_f32(&buffer_iter, &bufferPositionY);
+                        deserialize_f32(&buffer_iter, &bufferPositionY);
                         bytes_read += 4;
 
                         allShips[bufferClientId].setVelocity(bufferPositionX, bufferPositionY);
 
 
                         //Get rotation
-                        deserialise_u16(&buffer_iter, &bufferRotation);
+                        deserialize_u16(&buffer_iter, &bufferRotation);
                         bytes_read += 2;
 
                         allShips[bufferClientId].mesh.setRotation(bufferRotation);
