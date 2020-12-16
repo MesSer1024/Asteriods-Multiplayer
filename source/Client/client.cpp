@@ -4,7 +4,6 @@
 
 #include <Shared/Utils.h>
 #include <Shared/Network/NetworkTypes.h>
-#include "client_net.cpp"
 #include "client_object_component.cpp"
 #include <Shared/Network/Serialization.h>
 
@@ -27,7 +26,7 @@ namespace asteroids
     };
 
     struct input {
-        bool32 thrust, rotateLeft, rotateRight;
+        bool thrust, rotateLeft, rotateRight;
     };
     static input user_input;
 }
@@ -37,9 +36,9 @@ int main()
     using namespace asteroids;
 
     //Package drop variables
-    uint8 drop_counter = 0;
+    u8 drop_counter = 0;
     bool loss_sequence_running = false;
-    uint8 packages_lost = rand() % 20;
+    u8 packages_lost = rand() % 20;
 
     //Variables
     int speed = 5;
@@ -47,7 +46,7 @@ int main()
     sf::Vector2f velocity(0.f, 0.f);
     sf::Vector2f asteroid_velocity(1.f, 1.f);
 
-    uint8 clientId = 0xFF;
+    u8 clientId = 0xFF;
 
     //Init window
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "Massive Asteroids Multiplayer");
@@ -65,8 +64,8 @@ int main()
 
     //Tick initialization (TODO: Make sure it's same as server)
     UINT sleep_granularity_ms = 1;
-    bool32 sleep_granularity_was_set = timeBeginPeriod(sleep_granularity_ms) == TIMERR_NOERROR;
-    const uint32	TICKS_PER_SECOND = 60;
+    bool sleep_granularity_was_set = timeBeginPeriod(sleep_granularity_ms) == TIMERR_NOERROR;
+    const u32	TICKS_PER_SECOND = 60;
     const float32	SECONDS_PER_TICK = 1.0f / float32(TICKS_PER_SECOND);
 
     LARGE_INTEGER clock_frequency;
@@ -79,27 +78,28 @@ int main()
         return false;
     }
 
-    net::Socket sock;
+    net::Socket socket;
 
-    if (!net::socket_create(&sock))
+    if (!net::CreateSocket(&socket))
     {
-        printf("socket_create failed\n");
+        printf("CreateSocket failed\n");
         return false;
     }
 
 
     //Socket stuffs :-)
-    uint8 buffer[c_socket_buffer_size];
-    uint8 sendBuffer[c_socket_buffer_size];
-    net::IP_Endpoint server_endpoint = net::ip_endpoint_create(127, 0, 0, 1, c_port);
-    net::IP_Endpoint from;
-    uint32 bytes_received;
+    NetworkPacket sharedPacket(c_socket_buffer_size);
+    u8* sharedBuffer = sharedPacket.buffer.get();
+
+    net::NetworkIP server_endpoint(127, 0, 0, 1, c_port);
+    net::NetworkIP from;
+    u32 bytes_received;
 
     /*Debug, join automatically!*/
-    sendBuffer[0] = (int8)Client_Message::Join;
+    sharedBuffer[0] = (s8)Client_Message::Join;
 
     //TODO, only allow one ID per client, or perhaps from server to fix that!
-    if (net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
+    if (net::SendSocket(socket, sharedPacket, server_endpoint))
     {
         std::cout << "Joining server\n";
     }
@@ -168,19 +168,19 @@ int main()
 
 
         //Check for responses
-        while (net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
+        while (net::ReceiveSocket(socket, sharedPacket, from, bytes_received))
         {
 
-            uint8* buffer_iter = buffer;
-            uint8 message_type;
+            u8* buffer_iter = sharedBuffer;
+            u8 message_type;
 
 
-            switch ((Server_Message)buffer[0])
+            switch ((Server_Message)sharedBuffer[0])
             {
 
             case Server_Message::Join_Result:
 
-                uint8 success;
+                u8 success;
                 //Deserialize first uint8 of message (Message type)
                 deserialize_u8(&buffer_iter, &message_type);
 
@@ -205,7 +205,7 @@ int main()
 
 #ifdef PACKAGE_LOSS
                 //Randomize when package loss starts
-                if ((rand() % 20) == 0 & !loss_sequence_running)
+                if (!loss_sequence_running && ((rand() % 20) == 0))
                 {
                     loss_sequence_running = true;
                 }
@@ -224,11 +224,11 @@ int main()
                 else
                 {
 #endif
-                    uint8 bufferClientId;
+                    u8 bufferClientId;
                     float32 bufferPositionX = 0.f;
                     float32 bufferPositionY = 0.f;
-                    uint16 bufferRotation = 0;
-                    uint32 bytes_read = 0;
+                    u16 bufferRotation = 0;
+                    u32 bytes_read = 0;
 
                     //Get message type
                     deserialize_u8(&buffer_iter, &message_type);
@@ -273,19 +273,19 @@ int main()
         if ((clientId != 0xFF) && (user_input.thrust || user_input.rotateLeft || user_input.rotateRight))
         {
             //1 byte: Set message type
-            sendBuffer[0] = (Client_Message::Input);
+            sharedBuffer[0] = (Client_Message::Input);
             int bytes_written = 1;
 
             //2 byte: client ID
-            sendBuffer[1] = clientId;
+            sharedBuffer[1] = clientId;
             bytes_written += sizeof(clientId); //memcpy(&sendBuffer[bytes_written], &clientId, sizeof(clientId)); //Question: Why would you use memcpy?
 
             //3 byte: Set first bit to current thurst, second bit to rotateLeft and third bit to rotateRight
-            uint8 send_input = (uint8)user_input.thrust | (uint8)user_input.rotateLeft << 1 | (uint8)user_input.rotateRight << 2;
-            sendBuffer[2] = send_input;
+            u8 send_input = (u8)user_input.thrust | (u8)user_input.rotateLeft << 1 | (u8)user_input.rotateRight << 2;
+            sharedBuffer[2] = send_input;
 
             //Collect all key pressed in tick and send once per tick
-            if (!net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
+            if (!net::SendSocket(socket, sharedPacket, server_endpoint))
             {
                 std::cout << "\nDidn't send key pressed";
             }
@@ -297,7 +297,7 @@ int main()
         window.clear();
 
 
-        for (uint8 i = 0; i < c_max_clients; ++i)
+        for (u8 i = 0; i < c_max_clients; ++i)
         {
             if (allShips[i].connected)
             {

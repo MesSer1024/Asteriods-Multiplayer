@@ -29,7 +29,7 @@ namespace asteroids
         {
             mesh.setPosition(velocity);
         }
-        void setRotation(uint8 rotation)
+        void setRotation(u8 rotation)
         {
             mesh.rotate(rotation);
         }

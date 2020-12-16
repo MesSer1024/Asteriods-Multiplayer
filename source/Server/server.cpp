@@ -66,17 +66,17 @@ void main()
 		return;
 	}
 
-	net::Socket sock;
-	if (!net::socket_create(&sock))
+	net::Socket socket;
+	if (!net::CreateSocket(&socket))
 	{
-		printf("socket_create failed\n");
+		printf("CreateSocket failed\n");
 		return;
 	}
 
-	net::IP_Endpoint local_endpoint = {};
+	net::NetworkIP local_endpoint = {};
 	local_endpoint.address = INADDR_ANY;
 	local_endpoint.port = c_port;
-	if (!net::socket_bind(&sock, &local_endpoint))
+	if (!net::socket_bind(&socket, &local_endpoint))
 	{
 		printf("socket_bind failed");
 		return;
@@ -84,39 +84,44 @@ void main()
 
 	Timing_Info timing_info = timing_info_create();
 
-	uint8 buffer[c_socket_buffer_size];
-	net::IP_Endpoint client_endpoints[c_max_clients];
+	NetworkPacket receivedPacket(c_socket_buffer_size);
+	u8* inBuffer = receivedPacket.buffer.get();
+
+	NetworkPacket outgoingPacket(c_socket_buffer_size);
+	u8* outBuffer = outgoingPacket.buffer.get();
+
+	net::NetworkIP client_endpoints[c_max_clients];
 	float32 time_since_heard_from_clients[c_max_clients];
 	PhysicsComponent client_objects[c_max_clients];
 	Player_Input client_inputs[c_max_clients];
 
-	for (uint16 i = 0; i < c_max_clients; ++i)
+	for (u16 i = 0; i < c_max_clients; ++i)
 	{
 		client_endpoints[i] = {};
 	}
 
-	bool32 is_running = 1;
+	bool is_running = true;
 	while (is_running)
 	{
 		LARGE_INTEGER tick_start_time;
 		QueryPerformanceCounter(&tick_start_time);
 
 		// read all available packets
-		net::IP_Endpoint from;
-		uint32 bytes_received;
-		while (net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
+		net::NetworkIP from;
+		u32 bytes_received;
+		while (net::ReceiveSocket(socket, receivedPacket, from, bytes_received))
 		{
 
 			//Check type of message, first byte describes that
-			switch (buffer[0])
+			switch (inBuffer[0])
 			{
 			case Client_Message::Join:
 			{
 				printf("Client joining...");
 
 				//Check if there are any empty slots
-				uint8 slot = (uint8)-1;
-				for (uint8 i = 0; i < c_max_clients; ++i)
+				u8 slot = (u8)-1;
+				for (u8 i = 0; i < c_max_clients; ++i)
 				{
 					if (client_endpoints[i].address == 0)
 					{
@@ -125,22 +130,22 @@ void main()
 					}
 				}
 
-				buffer[0] = (int8)Server_Message::Join_Result;
+				outBuffer[0] = (s8)Server_Message::Join_Result;
 
 				//If available slot assign and reply back
-				if (slot != (uint8)-1)
+				if (slot != (u8)-1)
 				{
 					printf("client slot = %hu\n", slot);
 
-					buffer[0] = Server_Message::Join_Result;
+					outBuffer[0] = Server_Message::Join_Result;
 
 					//Set second byte to 1 for indicating success 
-					buffer[1] = 1;
+					outBuffer[1] = 1;
 
 					//Set third byte to the client ID, so that the client can use that when sending input message
-					memcpy(&buffer[2], &slot, 2);
+					memcpy(&outBuffer[2], &slot, 2);
 
-					if (net::socket_send(&sock, buffer, c_socket_buffer_size, &from))
+					if (net::SendSocket(socket, outgoingPacket, from))
 					{
 						PhysicsComponent newObject;
 
@@ -163,23 +168,20 @@ void main()
 				else
 				{
 					printf("could not find a slot for player\n");
-					buffer[1] = 0;
+					outBuffer[1] = 0;
 
-					if (!net::socket_send(&sock, buffer, 2, &from))
+					if (!net::SendSocket(socket, outgoingPacket, from))
 					{
 						printf("sendto failed: %d\n", WSAGetLastError());
 					}
 				}
-
-
-
 			}
 			break;
 
 			case Client_Message::Leave:
 			{
-				uint8 slot;
-				memcpy(&slot, &buffer[1], 2);
+				u8 slot;
+				memcpy(&slot, &inBuffer[1], 2);
 
 				if (client_endpoints[slot] == from)
 				{
@@ -198,15 +200,15 @@ void main()
 
 			case Client_Message::Input:
 			{
-				uint8 clientId;
-				memcpy(&clientId, &buffer[1], sizeof(&buffer[1]));
+				u8 clientId;
+				memcpy(&clientId, &outBuffer[1], sizeof(&outBuffer[1]));
 
 
 
 				//Check so that the ID matches where it comes from
 				if (client_endpoints[clientId] == from)
 				{
-					uint8 input = buffer[2];
+					u8 input = outBuffer[2];
 
 					client_inputs[clientId].thrust = input & 0x1;
 					client_inputs[clientId].rotateLeft = input & 0x2;
@@ -225,7 +227,7 @@ void main()
 		}
 
 		// process input and update state
-		for (uint8 i = 0; i < c_max_clients; ++i)
+		for (u8 i = 0; i < c_max_clients; ++i)
 		{
 
 			if (client_endpoints[i].address)
@@ -271,28 +273,28 @@ void main()
 		}
 
 		// create state packet (1 byte)
-		buffer[0] = (int8)Server_Message::State;
-		int32 bytes_written = 1;
+		outBuffer[0] = (s8)Server_Message::State;
+		s32 bytes_written = 1;
 
-		for (uint8 i = 0; i < c_max_clients; ++i)
+		for (u8 i = 0; i < c_max_clients; ++i)
 		{
 			if (client_endpoints[i].address)
 			{
 
 				//Set client ID (1 byte)
-				memcpy(&buffer[bytes_written], &i, sizeof(i));
+				memcpy(&outBuffer[bytes_written], &i, sizeof(i));
 				bytes_written += sizeof(i);
 
 				//Set client X position (4 byte)
-				memcpy(&buffer[bytes_written], &client_objects[i].positionX, sizeof(client_objects[i].positionX));
+				memcpy(&outBuffer[bytes_written], &client_objects[i].positionX, sizeof(client_objects[i].positionX));
 				bytes_written += sizeof(client_objects[i].positionX);
 
 				//Set client Y position (4 byte)
-				memcpy(&buffer[bytes_written], &client_objects[i].positionY, sizeof(client_objects[i].positionY));
+				memcpy(&outBuffer[bytes_written], &client_objects[i].positionY, sizeof(client_objects[i].positionY));
 				bytes_written += sizeof(client_objects[i].positionY);
 
 				//Set client rotation (2 byte)
-				memcpy(&buffer[bytes_written], &client_objects[i].rotation, sizeof(client_objects[i].rotation));
+				memcpy(&outBuffer[bytes_written], &client_objects[i].rotation, sizeof(client_objects[i].rotation));
 				bytes_written += sizeof(client_objects[i].rotation);
 
 			}
@@ -303,11 +305,13 @@ void main()
 		}
 
 		// send back to clients
-		for (uint8 i = 0; i < c_max_clients; ++i)
+		for (u8 i = 0; i < c_max_clients; ++i)
 		{
 			if (client_endpoints[i].address)
 			{
-				if (!net::socket_send(&sock, buffer, bytes_written, &client_endpoints[i]))
+				NetworkPacket data(bytes_written);
+				memcpy(data.buffer.get(), outBuffer, bytes_written);
+				if (!net::SendSocket(socket, data, client_endpoints[i]))
 				{
 					printf("sendto failed: %d\n", WSAGetLastError());
 				}

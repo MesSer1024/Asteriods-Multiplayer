@@ -3,34 +3,58 @@
 #include <Shared/Types.h>
 #include <Shared/Utils.h>
 #include <Shared/Debugger.h>
+#include <memory>
 
 namespace asteroids
 {
-	constexpr uint16 	c_port = 9999;
-	constexpr uint32 	c_socket_buffer_size = 1024;
-	constexpr uint16	c_max_clients = 32;
+	constexpr u16 	c_port = 9999;
+	constexpr u32 	c_socket_buffer_size = 1024;
+	constexpr u16	c_max_clients = 32;
 	
-	enum Client_Message : uint8
+	enum Client_Message : u8
 	{
 		Join,		// tell server we're new here
 		Leave,		// tell server we're leaving
 		Input 		// tell server our user input
 	};
 
-	enum Server_Message : uint8
+	enum Server_Message : u8
 	{
 		Join_Result,// tell client they're accepted/rejected
 		State 		// tell client game state
 	};
 
+	struct NetworkPacket
+	{
+		NetworkPacket(u32 size)
+			: buffer(new u8[size])
+			, size(size)
+		{}
+
+		std::unique_ptr<u8> buffer;
+		u32 size;
+	};
+
 	namespace net
 	{
-		struct IP_Endpoint
+		struct NetworkIP
 		{
-			uint32 address;
-			uint16 port;
+			NetworkIP() 
+				: address{}
+				, port{} 
+			{
+			}
 
-			bool operator==(const IP_Endpoint& other) const { return address == other.address && port == other.port; }
+			NetworkIP(u8 a, u8 b, u8 c, u8 d, u16 port)
+				: address((a << 24) | (b << 16) | (c << 8) | d)
+				, port(port)
+			{
+			}
+
+			u32 address;
+			u16 port;
+
+			bool operator==(const NetworkIP& other) const { return address == other.address && port == other.port; }
 		};
 
 		struct Socket
@@ -52,7 +76,7 @@ namespace asteroids
 			return true;
 		}
 
-		static bool socket_create(Socket* out_socket)
+		static bool CreateSocket(Socket* out_socket)
 		{
 			int address_family = AF_INET;
 			int type = SOCK_DGRAM;
@@ -79,17 +103,17 @@ namespace asteroids
 			return true;
 		}
 
-		static bool socket_send(Socket* sock, uint8* packet, uint32 packet_size, IP_Endpoint* endpoint)
+		static bool SendSocket(const Socket& socket, const NetworkPacket& packet, NetworkIP endpoint)
 		{
 			SOCKADDR_IN server_address;
 			server_address.sin_family = AF_INET;
-			server_address.sin_addr.S_un.S_addr = htonl(endpoint->address);
-			server_address.sin_port = htons(endpoint->port);
+			server_address.sin_addr.S_un.S_addr = htonl(endpoint.address);
+			server_address.sin_port = htons(endpoint.port);
 			int server_address_size = sizeof(server_address);
 
 			//printf("Sent to client: b0: %d, b1: %d, b2: %d\n", packet[0], packet[1], packet[2]);
 
-			if (sendto(sock->handle, (const char*)packet, packet_size, 0, (SOCKADDR*)&server_address, server_address_size) == SOCKET_ERROR)
+			if (sendto(socket.handle, reinterpret_cast<const char*>(packet.buffer.get()), packet.size, 0, (SOCKADDR*)&server_address, server_address_size) == SOCKET_ERROR)
 			{
 				log_warning("sendto failed: %d\n", WSAGetLastError());
 				return false;
@@ -98,14 +122,14 @@ namespace asteroids
 			return true;
 		}
 
-		static bool socket_receive(Socket* sock, uint8* buffer, uint32 buffer_size, IP_Endpoint* out_from, uint32* out_bytes_received)
+		static bool ReceiveSocket(const Socket& socket, NetworkPacket& packet, NetworkIP& outFrom, u32& outBytesReceived)
 		{
 			int flags = 0;
 			SOCKADDR_IN from;
 			int from_size = sizeof(from);
-			int bytes_received = recvfrom(sock->handle, (char*)buffer, buffer_size, flags, (SOCKADDR*)&from, &from_size);
+			int bytesReceived = recvfrom(socket.handle, reinterpret_cast<char*>(packet.buffer.get()), packet.size, flags, (SOCKADDR*)&from, &from_size);
 
-			if (bytes_received == SOCKET_ERROR)
+			if (bytesReceived == SOCKET_ERROR)
 			{
 				int error = WSAGetLastError();
 				if (error != WSAEWOULDBLOCK)
@@ -116,13 +140,13 @@ namespace asteroids
 				return false;
 			}
 
-			*out_from = {};
-			out_from->address = ntohl(from.sin_addr.S_un.S_addr);
-			out_from->port = ntohs(from.sin_port);
+			outFrom = {};
+			outFrom.address = ntohl(from.sin_addr.S_un.S_addr);
+			outFrom.port = ntohs(from.sin_port);
 
-			*out_bytes_received = bytes_received;
+			outBytesReceived = bytesReceived;
 
 			return true;
 		}
-	} // namespace Net
+	}
 }
