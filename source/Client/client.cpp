@@ -1,7 +1,5 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 
 #include "common.cpp"
@@ -28,7 +26,7 @@ struct object {
 };
 
 struct input {
-    bool32 thurst, rotateLeft, rotateRight;
+    bool32 thrust, rotateLeft, rotateRight;
 };
 static input user_input;
 
@@ -128,7 +126,7 @@ int main()
 
                 //Increase thrust
                 case sf::Keyboard::W:
-                    user_input.thurst = true;
+                    user_input.thrust = true;
                     break;
 
                 //Rotate right
@@ -270,7 +268,7 @@ int main()
         }
      
         //Send input to server, if any
-       if((clientId != 0xFF) && (user_input.thurst || user_input.rotateLeft || user_input.rotateRight))
+       if((clientId != 0xFF) && (user_input.thrust || user_input.rotateLeft || user_input.rotateRight))
        {                    
             //1 byte: Set message type
             sendBuffer[0] = (Client_Message::Input);
@@ -281,7 +279,7 @@ int main()
             bytes_written += sizeof(clientId); //memcpy(&sendBuffer[bytes_written], &clientId, sizeof(clientId)); //Question: Why would you use memcpy?
 
             //3 byte: Set first bit to current thurst, second bit to rotateLeft and third bit to rotateRight
-            uint8 send_input = (uint8)user_input.thurst | (uint8)user_input.rotateLeft << 1 | (uint8)user_input.rotateRight << 2;
+            uint8 send_input = (uint8)user_input.thrust | (uint8)user_input.rotateLeft << 1 | (uint8)user_input.rotateRight << 2;
             sendBuffer[2] = send_input;
 
             //Collect all key pressed in tick and send once per tick
@@ -327,7 +325,7 @@ int main()
             time_taken_s = time_since(tick_start_time, clock_frequency);
         }
 
-        user_input.thurst = NULL;
+        user_input.thrust = NULL;
         user_input.rotateRight = NULL;
         user_input.rotateLeft = NULL;
 

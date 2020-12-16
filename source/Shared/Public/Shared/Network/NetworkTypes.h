@@ -2,15 +2,18 @@
 
 #include <Shared/Types.h>
 #include <Shared/Utils.h>
+#include <Shared/Debugger.h>
 
 namespace asteroids
 {
-	namespace Net
+	namespace net
 	{
 		struct IP_Endpoint
 		{
 			uint32 address;
 			uint16 port;
+
+			bool operator==(const IP_Endpoint& other) const { return address == other.address && port == other.port; }
 		};
 
 		struct Socket

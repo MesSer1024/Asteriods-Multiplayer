@@ -1,6 +1,6 @@
 #pragma once
 
-#include <windows.h>
+#include <Shared/Project.h>
 
 namespace asteroids
 {

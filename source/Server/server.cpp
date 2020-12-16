@@ -45,48 +45,38 @@ TODO:
 
 */
 
-
-#define _USE_MATH_DEFINES
-#include <math.h>
-
-#include "common.cpp"
-#include "common_net.cpp"
 #include "server_net.cpp"
-#include "object_component.cpp"
-#include "object_system.cpp"
+#include "PhysicsComponent.h"
+#include "PhysicsSystem.h"
 
-constexpr uint16 c_turn_speed = 5;	// how fast player turns
-constexpr float32 c_max_speed = 50.f; //TODO: Implement so that we have a max speed
-constexpr float32 c_client_timeout = 60.f;
-
-
-struct Player_Input
-{
-	bool32 thurst, rotateLeft, rotateRight;
-};
-
+#include <Shared/Types.h>
+#include <Shared/Network/NetworkTypes.h>
+#include <Shared/GameplayConcepts.h>
+#include <stdio.h>
 
 void main()
 {
+	using namespace asteroids;
+
 	printf("Server started\n");
 
-	if (!Net::init())
+	if (!net::init())
 	{
-		printf("Net::init failed\n");
+		printf("net::init failed\n");
 		return;
 	}
 
-	Net::Socket sock;
-	if (!Net::socket_create(&sock))
+	net::Socket sock;
+	if (!net::socket_create(&sock))
 	{
 		printf("socket_create failed\n");
 		return;
 	}
 
-	Net::IP_Endpoint local_endpoint = {};
+	net::IP_Endpoint local_endpoint = {};
 	local_endpoint.address = INADDR_ANY;
 	local_endpoint.port = c_port;
-	if (!Net::socket_bind(&sock, &local_endpoint))
+	if (!net::socket_bind(&sock, &local_endpoint))
 	{
 		printf("socket_bind failed");
 		return;
@@ -95,9 +85,9 @@ void main()
 	Timing_Info timing_info = timing_info_create();
 
 	uint8 buffer[c_socket_buffer_size];
-	Net::IP_Endpoint client_endpoints[c_max_clients];
+	net::IP_Endpoint client_endpoints[c_max_clients];
 	float32 time_since_heard_from_clients[c_max_clients];
-	objectComponent client_objects[c_max_clients];
+	PhysicsComponent client_objects[c_max_clients];
 	Player_Input client_inputs[c_max_clients];
 
 	for (uint16 i = 0; i < c_max_clients; ++i)
@@ -112,9 +102,9 @@ void main()
 		QueryPerformanceCounter(&tick_start_time);
 
 		// read all available packets
-		Net::IP_Endpoint from;
+		net::IP_Endpoint from;
 		uint32 bytes_received;
-		while (Net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
+		while (net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
 		{
 
 			//Check type of message, first byte describes that
@@ -143,21 +133,21 @@ void main()
 					printf("client slot = %hu\n", slot);
 
 					buffer[0] = Server_Message::Join_Result;
-					
+
 					//Set second byte to 1 for indicating success 
 					buffer[1] = 1;
 
 					//Set third byte to the client ID, so that the client can use that when sending input message
 					memcpy(&buffer[2], &slot, 2);
 
-					if (Net::socket_send(&sock, buffer, c_socket_buffer_size, &from))
+					if (net::socket_send(&sock, buffer, c_socket_buffer_size, &from))
 					{
-						objectComponent newObject;
+						PhysicsComponent newObject;
 
 						//Set random rotation and add velocity, only so that I can test with many clients!
 						newObject.rotation = rand() % 360;
-						newObject.velocityX += (sin(((float32)newObject.rotation / 180 * M_PI))) ;
-						newObject.velocityY += (-cos(((float32)newObject.rotation / 180 * M_PI))) ;
+						newObject.velocityX += static_cast<float32>(sin(((float32)newObject.rotation / 180 * M_PI)));
+						newObject.velocityY += static_cast<float32>(-cos(((float32)newObject.rotation / 180 * M_PI)));
 
 
 						client_endpoints[slot] = from;
@@ -175,13 +165,13 @@ void main()
 					printf("could not find a slot for player\n");
 					buffer[1] = 0;
 
-					if (!Net::socket_send(&sock, buffer, 2, &from))
+					if (!net::socket_send(&sock, buffer, 2, &from))
 					{
 						printf("sendto failed: %d\n", WSAGetLastError());
 					}
 				}
 
-				
+
 
 			}
 			break;
@@ -191,7 +181,7 @@ void main()
 				uint8 slot;
 				memcpy(&slot, &buffer[1], 2);
 
-				if (Net::ip_endpoint_equal(&client_endpoints[slot], &from))
+				if (net::ip_endpoint_equal(&client_endpoints[slot], &from))
 				{
 					client_endpoints[slot] = {};
 					printf("Client_Message::Leave from %hu(%u:%hu)\n",
@@ -211,14 +201,14 @@ void main()
 				uint8 clientId;
 				memcpy(&clientId, &buffer[1], sizeof(&buffer[1]));
 
-				
+
 
 				//Check so that the ID matches where it comes from
-				if (Net::ip_endpoint_equal(&client_endpoints[clientId], &from))
+				if (net::ip_endpoint_equal(&client_endpoints[clientId], &from))
 				{
 					uint8 input = buffer[2];
 
-					client_inputs[clientId].thurst = input & 0x1;
+					client_inputs[clientId].thrust = input & 0x1;
 					client_inputs[clientId].rotateLeft = input & 0x2;
 					client_inputs[clientId].rotateRight = input & 0x4;
 
@@ -240,13 +230,13 @@ void main()
 
 			if (client_endpoints[i].address)
 			{
-				if (client_inputs[i].thurst)
+				if (client_inputs[i].thrust)
 				{
 					//Increase velocity towards current rotation
-					client_objects[i].velocityX  += (sin(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
-					client_objects[i].velocityY += (-cos(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
+					client_objects[i].velocityX += static_cast<float32>(sin(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
+					client_objects[i].velocityY += static_cast<float32>(-cos(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
 				}
-				
+
 				if (client_inputs[i].rotateLeft)
 				{
 					//Ensure correct degrees
@@ -254,16 +244,16 @@ void main()
 						client_objects[i].rotation = 360 - c_turn_speed;
 					else
 						client_objects[i].rotation -= c_turn_speed;
-				
+
 				}
 				if (client_inputs[i].rotateRight)
 				{
 					//Ensure correct degrees
-					if(client_objects[i].rotation == 360)
+					if (client_objects[i].rotation == 360)
 						client_objects[i].rotation = c_turn_speed;
 					else
 						client_objects[i].rotation += c_turn_speed;
-					
+
 				}
 
 				time_since_heard_from_clients[i] += c_seconds_per_tick;
@@ -273,7 +263,7 @@ void main()
 					client_endpoints[i] = {};
 				}
 
-				
+
 				//Updatet this objects position
 				updateServerObjectPosition(client_objects[i]);
 
@@ -317,13 +307,13 @@ void main()
 		{
 			if (client_endpoints[i].address)
 			{
-				if (!Net::socket_send(&sock, buffer, bytes_written, &client_endpoints[i]))
+				if (!net::socket_send(&sock, buffer, bytes_written, &client_endpoints[i]))
 				{
 					printf("sendto failed: %d\n", WSAGetLastError());
 				}
 			}
 		}
-		
+
 		wait_for_tick_end(tick_start_time, &timing_info);
 	}
 }

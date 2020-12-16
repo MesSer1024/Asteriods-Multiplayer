@@ -4,10 +4,10 @@ int dummy() { return 42; }
 
 int foobar()
 {
-	asteroids::Net::init();
+	asteroids::net::init();
 
-	asteroids::Net::Socket* foo = nullptr;
-	asteroids::Net::socket_create(foo);
+	asteroids::net::Socket* foo = nullptr;
+	asteroids::net::socket_create(foo);
 
 	return 12;
 }

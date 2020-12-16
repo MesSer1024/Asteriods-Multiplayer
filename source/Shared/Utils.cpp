@@ -1,17 +1,9 @@
 #pragma once
 
 #include <Shared/Utils.h>
-#include <stdio.h>
 
 namespace asteroids
 {
-	// todo(jbr) logging system
-	void log_warning(const char* fmt, int arg)
-	{
-		char buffer[256];
-		sprintf_s(buffer, sizeof(buffer), fmt, arg);
-		OutputDebugStringA(buffer);
-	}
 
 	float32 time_since(LARGE_INTEGER t, LARGE_INTEGER frequency)
 	{
