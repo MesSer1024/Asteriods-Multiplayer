@@ -7,12 +7,12 @@
 *.idb
 *.pdb
 *.ilk
-*.exe
 *.dll
 *.vcxproj
 *.sln
 *.iobj
 *.ipdb
-./local/*
 bin/*
 local/*
+
+!ExternalLibs/**
