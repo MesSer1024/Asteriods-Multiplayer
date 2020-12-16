@@ -26,13 +26,13 @@ namespace asteroids
 
 	struct NetworkPacket
 	{
-		NetworkPacket(u32 size)
-			: buffer(new u8[size])
-			, size(size)
+		NetworkPacket(u32 bitsUsed)
+			: buffer(new u8[bitsUsed])
+			, bitsUsed(bitsUsed)
 		{}
 
 		std::unique_ptr<u8> buffer;
-		u32 size;
+		u32 bitsUsed;
 	};
 
 	namespace net
@@ -138,7 +138,7 @@ namespace asteroids
 
 			//printf("Sent to client: b0: %d, b1: %d, b2: %d\n", packet[0], packet[1], packet[2]);
 
-			if (sendto(socket.handle, reinterpret_cast<const char*>(packet.buffer.get()), packet.size, 0, (SOCKADDR*)&server_address, server_address_size) == SOCKET_ERROR)
+			if (sendto(socket.handle, reinterpret_cast<const char*>(packet.buffer.get()), packet.bitsUsed, 0, (SOCKADDR*)&server_address, server_address_size) == SOCKET_ERROR)
 			{
 				log_warning("sendto failed: %d\n", WSAGetLastError());
 				return false;
@@ -152,7 +152,7 @@ namespace asteroids
 			int flags = 0;
 			SOCKADDR_IN from;
 			int from_size = sizeof(from);
-			int bytesReceived = recvfrom(socket.handle, reinterpret_cast<char*>(packet.buffer.get()), packet.size, flags, (SOCKADDR*)&from, &from_size);
+			int bytesReceived = recvfrom(socket.handle, reinterpret_cast<char*>(packet.buffer.get()), packet.bitsUsed, flags, (SOCKADDR*)&from, &from_size);
 
 			if (bytesReceived == SOCKET_ERROR)
 			{

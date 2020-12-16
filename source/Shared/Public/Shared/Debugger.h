@@ -6,6 +6,7 @@
 namespace asteroids
 {
 
+
 	// todo(jbr) logging system
 	static void log_warning(const char* fmt, int arg)
 	{

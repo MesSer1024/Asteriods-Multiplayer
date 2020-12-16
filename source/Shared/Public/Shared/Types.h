@@ -15,9 +15,6 @@ namespace asteroids
 	using float32 = float;
 	using float64 = double;
 
-	constexpr u32	c_ticks_per_second = 60;
-	constexpr float32	c_seconds_per_tick = 1.0f / (float32)c_ticks_per_second;
-
 	struct Timing_Info
 	{
 		LARGE_INTEGER clock_frequency;

@@ -100,8 +100,8 @@ void main()
 	bool is_running = true;
 	while (is_running)
 	{
-		LARGE_INTEGER tick_start_time;
-		QueryPerformanceCounter(&tick_start_time);
+		LARGE_INTEGER timestampFrameStart;
+		QueryPerformanceCounter(&timestampFrameStart);
 
 		// read all available packets
 		net::NetworkIP from;
@@ -315,6 +315,6 @@ void main()
 			}
 		}
 
-		wait_for_tick_end(tick_start_time, &timing_info);
+		wait_for_tick_end(timestampFrameStart, &timing_info);
 	}
 }

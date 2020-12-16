@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Shared/GameplayConcepts.h>
 #include <Shared/Utils.h>
 
 namespace asteroids

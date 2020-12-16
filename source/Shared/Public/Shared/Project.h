@@ -7,6 +7,8 @@
 #include <windows.h>
 
 
-#ifndef RELEASE
-#define assert( x ) if( !( x ) ) { MessageBoxA( 0, #x, "Debug Assertion Failed", MB_OK ); }
+#if defined(DEBUG)
+#define DUD_ASSERT( x ) if( !( x ) ) { MessageBoxA( 0, #x, "Debug Assertion Failed", MB_OK ); }
+#else
+#define DUD_ASSERT( x ) // stripped
 #endif
