@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Shared/Types.h>
+#include <Network/CoreIncludes.h>
 
-namespace asteroids
+namespace dud
 {
 	constexpr u32 c_ticks_per_second = 60;
 	constexpr float32 c_seconds_per_tick = 1.0f / (float32)c_ticks_per_second;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Shared/Types.h>
+#include <Network/CoreIncludes.h>
 
-namespace asteroids
+namespace dud
 {
 	class PhysicsComponent
 	{

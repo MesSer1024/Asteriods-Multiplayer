@@ -1,11 +1,8 @@
 #pragma once
 
-#include <Shared/Types.h>
-#include <Shared/Utils.h>
-#include <Shared/Debugger.h>
-#include <memory>
+#include <Network/CoreIncludes.h>
 
-namespace asteroids
+namespace dud
 {
 	constexpr u16 	c_port = 9999;
 	constexpr u32 	c_socket_buffer_size = 1024;

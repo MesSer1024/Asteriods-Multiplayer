@@ -49,20 +49,19 @@ TODO:
 #include "PhysicsComponent.h"
 #include "PhysicsSystem.h"
 
-#include <Shared/Types.h>
-#include <Shared/Network/NetworkTypes.h>
+#include <Network/CoreIncludes.h>
 #include <Shared/GameplayConcepts.h>
-#include <stdio.h>
+#include <Shared/Utils.h>
 
 void main()
 {
-	using namespace asteroids;
+	using namespace dud;
 
-	printf("Server started\n");
+	writeLog("Server started\n");
 
 	if (!net::init())
 	{
-		printf("net::init failed\n");
+		writeLog("net::init failed\n");
 		return;
 	}
 
@@ -75,7 +74,7 @@ void main()
 	bool binded = socket ? net::BindSocket(socket, local_endpoint) : false;
 	if (!binded)
 	{
-		printf("Failed to bind or create socket \n");
+		writeLog("Failed to bind or create socket \n");
 		return;
 	}
 
@@ -114,7 +113,7 @@ void main()
 			{
 			case Client_Message::Join:
 			{
-				printf("Client joining...");
+				writeLog("Client joining...");
 
 				//Check if there are any empty slots
 				u8 slot = (u8)-1;
@@ -132,7 +131,7 @@ void main()
 				//If available slot assign and reply back
 				if (slot != (u8)-1)
 				{
-					printf("client slot = %hu\n", slot);
+					log_warning("client slot = %hu\n", slot);
 
 					outBuffer[0] = Server_Message::Join_Result;
 
@@ -159,17 +158,17 @@ void main()
 					}
 					else
 					{
-						printf("sendto failed: %d\n", WSAGetLastError());
+						log_warning("sendto failed: %d\n", WSAGetLastError());
 					}
 				}
 				else
 				{
-					printf("could not find a slot for player\n");
+					writeLog("could not find a slot for player\n");
 					outBuffer[1] = 0;
 
 					if (!net::SendSocket(socket, outgoingPacket, from))
 					{
-						printf("sendto failed: %d\n", WSAGetLastError());
+						log_warning("sendto failed: %d\n", WSAGetLastError());
 					}
 				}
 			}
@@ -258,7 +257,7 @@ void main()
 				time_since_heard_from_clients[i] += c_seconds_per_tick;
 				if (time_since_heard_from_clients[i] > c_client_timeout)
 				{
-					printf("client %hu timed out\n", i);
+					log_warning("client %hu timed out\n", i);
 					client_endpoints[i] = {};
 				}
 
@@ -310,7 +309,7 @@ void main()
 				memcpy(data.buffer.get(), outBuffer, bytes_written);
 				if (!net::SendSocket(socket, data, client_endpoints[i]))
 				{
-					printf("sendto failed: %d\n", WSAGetLastError());
+					log_warning("sendto failed: %d\n", WSAGetLastError());
 				}
 			}
 		}

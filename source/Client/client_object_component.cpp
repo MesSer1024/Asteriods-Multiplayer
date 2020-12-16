@@ -1,7 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <Shared/Utils.h>
 
-namespace asteroids
+namespace dud
 {
     class ClientObject {
 

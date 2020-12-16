@@ -1,7 +1,7 @@
 #include "PhysicsComponent.h"
-#include <Shared/Types.h>
+#include <Network/CoreIncludes.h>
 
-namespace asteroids
+namespace dud
 {
 	void updateServerObjectPosition(PhysicsComponent& object)
 	{

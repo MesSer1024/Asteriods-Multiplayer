@@ -17,6 +17,7 @@ workspace "AsteroidsMP"
    configurations { "Debug", "Release" }
    platforms { "Static" }
    architecture "x64"   
+	cppdialect "C++17"
    location "local"
 
    libdirs { "ExternalLibs/SFML-2.5.1/lib/" }
@@ -40,60 +41,101 @@ workspace "AsteroidsMP"
       optimize "On"
       symbols "On"
 
-project "Shared"
-   targetdir "bin/%{cfg.buildcfg}"
-   includedirs { "source/Shared/", "source/Shared/Public/" }
+-- Done with global project settings
+group "_External"
 
-   files { "source/Shared/**.*"}
-   removefiles {}
+  project "GoogleTest"
+    kind "StaticLib"
+    files { "ExternalLibs/googletest/src/gtest-all.cc" }
+    includedirs { "ExternalLibs/googletest/include", "ExternalLibs/googletest" }
 
-project "Server"
-   kind "ConsoleApp"
-   targetdir "bin/%{cfg.buildcfg}"
-   targetname "Asteroids Server"
-   
-   filter { "configurations:Debug" }
-	defines { "FAKE_LAG" } 
-	filter {}
+group ""  -- leave External-group
+	  
 
-   links { "Shared" }
-   links { 
-	"winmm.lib", "wsock32.lib", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
+group "Library"
+	project "Network"
+	kind "StaticLib"
+	files { "source/Network/**" }
+
+	includedirs { "source/Network/Public", "source/Network" }
+	defines { "BUILD_EXPORT_NETWORK_MODULE"}
+
+group "Library/Tests"
+  project "Network.Test"
+    kind "ConsoleApp"
+    defines { "BUILD_INTERNAL_ACCESS_NETWORK_MODULE"}
+	targetdir "bin/%{cfg.buildcfg}"
 	
-	includedirs { "ExternalLibs/SFML-2.5.1/include" }
-	
-   includedirs {  
-		"source/Server/", 
-		"source/Server/Public/", 
-		"source/Shared/Public/" 
+    files { "source/Network.Test/**" }
+
+    links { "Network", "GoogleTest" }
+	includedirs { 
+		"source/Network.Test", 
+		"source/Network/Public", 
+		"source/Network", 
+		"ExternalLibs/googletest/include" 
 	}
+group "" -- leave Library-group
 
-   files { "source/Server/**.*" }
+group "Asteroids"
+	project "Shared"
+	   targetdir "bin/%{cfg.buildcfg}"
+	   includedirs { "source/Network/Public", "source/Shared/", "source/Shared/Public/" }
 
-project "Client"
-   kind "ConsoleApp"
-   targetdir "bin/%{cfg.buildcfg}"
-   targetname "Asteroids Client"
+	   files { "source/Shared/**.*"}
+	   
+	   links { "Network" }
 
-   links { "Shared" }
+	project "Server"
+	   kind "ConsoleApp"
+	   targetdir "bin/%{cfg.buildcfg}"
+	   targetname "Asteroids Server"
+	   
+	   filter { "configurations:Debug" }
+		defines { "FAKE_LAG" } 
+		filter {}
 
-   links { 
-	"winmm.lib", "wsock32.lib", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
-	"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
-	
+	   links { "Shared", "Network" }
+	   links { 
+		"winmm.lib", "wsock32.lib", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
+		
+		includedirs { "ExternalLibs/SFML-2.5.1/include" }
+		
+	   includedirs {  
+			"source/Network/Public",
+			"source/Server/", 
+			"source/Server/Public/", 
+			"source/Shared/Public/" 
+		}
 
-	includedirs { "ExternalLibs/SFML-2.5.1/include" }
-   includedirs { 
-	"source/Client/", 
-	"source/Client/Public/",
-	"source/Shared/Public/"
-   }
+	   files { "source/Server/**.*" }
 
-   files { "source/Client/**.*" }
+	project "Client"
+	   kind "ConsoleApp"
+	   targetdir "bin/%{cfg.buildcfg}"
+	   targetname "Asteroids Client"
+
+	   links { "Shared", "Network" }
+
+	   links { 
+		"winmm.lib", "wsock32.lib", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-graphics", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-window", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-system", 
+		"ExternalLibs/SFML-2.5.1/lib/sfml-network" }
+		
+
+		includedirs { "ExternalLibs/SFML-2.5.1/include" }
+	   includedirs { 
+	    "source/Network/Public",
+		"source/Client/", 
+		"source/Client/Public/",
+		"source/Shared/Public/"
+	   }
+
+	   files { "source/Client/**.*" }
+group "" -- leave Asteroids-scope

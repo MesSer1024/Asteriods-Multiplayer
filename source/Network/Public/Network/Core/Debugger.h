@@ -1,13 +1,14 @@
 #pragma once
 
-#include <Shared/Project.h>
+#include <Network/Core/Project.h>
 
-
-namespace asteroids
+namespace dud
 {
+	static void writeLog(const char* fmt)
+	{
+		printf(fmt);
+	}
 
-
-	// todo(jbr) logging system
 	static void log_warning(const char* fmt, int arg)
 	{
 		char buffer[256];

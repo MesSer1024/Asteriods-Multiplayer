@@ -17,7 +17,7 @@
 
 */
 
-namespace asteroids
+namespace dud
 {
 
     struct object {
@@ -33,7 +33,7 @@ namespace asteroids
 
 int main()
 {
-    using namespace asteroids;
+    using namespace dud;
 
     //Package drop variables
     u8 drop_counter = 0;

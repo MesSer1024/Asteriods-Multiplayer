@@ -3,7 +3,7 @@
 #include <Shared/Types.h>
 #include <memory>
 
-namespace asteroids
+namespace dud
 {
 	constexpr u32 NumBitsInWord = 64;
 	constexpr u32 NumMaxBytesInPacket = 2048;
@@ -63,7 +63,7 @@ namespace asteroids
 		bool writeBool(bool flag)
 		{
 			u64 bitInWord = static_cast<u64>(_bitPos % NumBitsInWord);
-			u64 otherBits = (~0ull) & ~(1ull << bitInWord) 
+			u64 otherBits = (~0ull) & ~(1ull << bitInWord);
 			u64 flagAsWord = static_cast<u64>(flag);
 		}
 

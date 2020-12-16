@@ -3,7 +3,7 @@
 #include <Shared/GameplayConcepts.h>
 #include <Shared/Utils.h>
 
-namespace asteroids
+namespace dud
 {
 
 	float32 time_since(LARGE_INTEGER t, LARGE_INTEGER frequency)

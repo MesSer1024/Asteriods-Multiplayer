@@ -1,9 +1,8 @@
 #pragma once
 
-#include <Shared/Debugger.h>
 #include <Shared/Network/NetworkTypes.h>
 
-namespace asteroids
+namespace dud
 {
 	namespace net
 	{

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Shared/Types.h>
+#include <Network/CoreIncludes.h>
 
-namespace asteroids
+namespace dud
 {
 	static void deserialize_u8(u8** buffer, u8* u)
 	{
