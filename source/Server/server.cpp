@@ -181,7 +181,7 @@ void main()
 				uint8 slot;
 				memcpy(&slot, &buffer[1], 2);
 
-				if (net::ip_endpoint_equal(&client_endpoints[slot], &from))
+				if (client_endpoints[slot] == from)
 				{
 					client_endpoints[slot] = {};
 					printf("Client_Message::Leave from %hu(%u:%hu)\n",
@@ -204,7 +204,7 @@ void main()
 
 
 				//Check so that the ID matches where it comes from
-				if (net::ip_endpoint_equal(&client_endpoints[clientId], &from))
+				if (client_endpoints[clientId] == from)
 				{
 					uint8 input = buffer[2];
 

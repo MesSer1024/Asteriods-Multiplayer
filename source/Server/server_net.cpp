@@ -1,18 +1,12 @@
 #pragma once
 
-#include <Shared/Network/NetworkTypes.h>
 #include <Shared/Debugger.h>
+#include <Shared/Network/NetworkTypes.h>
 
 namespace asteroids
 {
 	namespace net
 	{
-
-		static bool ip_endpoint_equal(IP_Endpoint* a, IP_Endpoint* b)
-		{
-			return *a == *b; // #TODO : remove
-		}
-
 		static SOCKADDR_IN ip_endpoint_to_sockaddr_in(IP_Endpoint* ip_endpoint)
 		{
 			SOCKADDR_IN sockaddr_in;
