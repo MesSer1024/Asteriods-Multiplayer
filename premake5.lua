@@ -50,6 +50,7 @@ project "Shared"
 project "Server"
    kind "ConsoleApp"
    targetdir "bin/%{cfg.buildcfg}"
+   targetname "Asteroids Server"
    
    filter { "configurations:Debug" }
 	defines { "FAKE_LAG" } 
@@ -76,6 +77,7 @@ project "Server"
 project "Client"
    kind "ConsoleApp"
    targetdir "bin/%{cfg.buildcfg}"
+   targetname "Asteroids Client"
 
    links { "Shared" }
 

@@ -49,7 +49,7 @@ int main()
     u8 clientId = 0xFF;
 
     //Init window
-    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Massive Asteroids Multiplayer");
+    sf::RenderWindow window(sf::VideoMode(1000, 1000), "Asteroids Client");
     window.setFramerateLimit(60);
 
     //TODO: Implement visual thurst that only lives on client
