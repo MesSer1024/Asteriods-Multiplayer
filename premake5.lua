@@ -1,4 +1,4 @@
--- premake5.lua
+-- AsteroidsMultiplayer/premake5.lua
 
 function os.winSdkVersion()
     local reg_arch = iif( os.is64bit(), "\\Wow6432Node\\", "\\" )
@@ -15,7 +15,8 @@ workspace "AsteroidsMP"
 	platforms { "Static" }
 	architecture "x64"   
 	cppdialect "C++17"
-	location "local" --output folder
+	location "local" -- project folder [sln-files ...]
+	targetdir "bin/%{cfg.buildcfg}" -- output directory
 
 	libdirs { "ExternalLibs/SFML-2.5.1/lib/" }
 
@@ -45,8 +46,6 @@ function DeclareProject(identifier, projectType)
 	project (identifier)
 	if projectType ~= nil then kind (projectType) else kind ("StaticLib") end
 	
-	targetdir "bin/%{cfg.buildcfg}"
-	
 	files { "source/" .. identifier .. "/**" }
 	includedirs { "source/" .. identifier, "source/" .. identifier .. "/Public"  }
 end
@@ -54,8 +53,6 @@ end
 function DeclareTestProject(identifier)
 	project (identifier)
 	kind "ConsoleApp"
-	
-	targetdir "bin/%{cfg.buildcfg}"
 	
 	files { "source/" .. identifier .. "/**" }
 	includedirs { "source/" .. identifier, "ExternalLibs/googletest/include" }		
