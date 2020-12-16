@@ -1,6 +1,6 @@
 **/.vs/*
 
-bin/*
+# bin/* -- separate .gitignore-files
 local/*
 
 !ExternalLibs/**
