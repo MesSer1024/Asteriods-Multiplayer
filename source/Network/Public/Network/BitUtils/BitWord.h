@@ -74,9 +74,9 @@ inline BitWordType countSetBits(BitWordType word)
 }
 
 template<class BitAction>
-void foreachOne(BitAction&& action, BitWordType word, uint invokedBitIndexOffset = 0)
+void foreachOne(BitAction&& action, BitWordType word, uint functorReportedBitOffset = 0)
 {
-	uint i = invokedBitIndexOffset;
+	uint i = functorReportedBitOffset;
 
 	while (word != 0ull)
 	{
