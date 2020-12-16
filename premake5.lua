@@ -15,6 +15,7 @@ workspace "AsteroidsMP"
 	platforms { "Static" }
 	architecture "x64"   
 	cppdialect "C++17"
+	
 	location "local" -- project folder [sln-files ...]
 	targetdir "bin/%{cfg.buildcfg}" -- output directory
 
