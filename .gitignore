@@ -1,17 +1,5 @@
 **/.vs/*
-*.filters
-*.user
-*.log
-*.obj
-*.tlog
-*.idb
-*.pdb
-*.ilk
-*.dll
-*.vcxproj
-*.sln
-*.iobj
-*.ipdb
+
 bin/*
 local/*
 
