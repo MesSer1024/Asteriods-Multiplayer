@@ -54,6 +54,14 @@ inline void setBit(BitWordType& word, u32 bit)
 	word = (word & ~mask) | mask;
 }
 
+inline void modifyBit(BitWordType& word, u32 bit, bool enabledFlag)
+{
+	if (enabledFlag)
+		setBit(word, bit);
+	else
+		clearBit(word, bit);
+}
+
 inline bool getBit(BitWordType word, u32 bit)
 {
 	BitWordType mask = (1ull << bit);

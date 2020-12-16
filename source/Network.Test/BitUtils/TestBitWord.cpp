@@ -229,6 +229,29 @@ TEST(bitword_fixture, setAndGet_testAllValidVariations)
 	}
 }
 
+TEST(bitword_fixture, modifyBit_sameAsSetAndClear)
+{
+	for (uint i = 0; i < NumBitsInWord; ++i)
+	{
+		{
+			BitWordType bitsFromSet, modifiedSet;
+			modifiedSet = bitsFromSet = 0x1818181818181818;
+			bitword::setBit(bitsFromSet, i);
+			bitword::modifyBit(modifiedSet, i, true);
+
+			ASSERT_EQ(bitsFromSet, modifiedSet);
+		}
+		{
+			BitWordType bitsFromCleared, modifiedCleared;
+			modifiedCleared = bitsFromCleared = 0xF7F7f7f7f7f7f7f7;
+			bitword::setBit(bitsFromCleared, i);
+			bitword::modifyBit(modifiedCleared, i, false);
+
+			ASSERT_EQ(bitsFromCleared, modifiedCleared);
+		}
+	}
+}
+
 TEST(bitword_fixture, testSetAndGet_invalidValues)
 {
 	// all of these are UB
