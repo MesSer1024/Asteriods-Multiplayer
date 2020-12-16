@@ -2,11 +2,11 @@
 #include <iostream>
 
 
-#include "common.cpp"
-#include "common_net.cpp"
+#include <Shared/Utils.h>
+#include <Shared/Network/NetworkTypes.h>
 #include "client_net.cpp"
-#include "net_messages.cpp"
 #include "client_object_component.cpp"
+#include <Shared/Network/Serialization.h>
 
 /* IMPROVEMENTS
 - Being able to press multiple keys simulatnious
@@ -18,21 +18,23 @@
 
 */
 
+namespace asteroids
+{
 
+    struct object {
+        sf::CircleShape mesh;
+        sf::Vector2f velocity;
+    };
 
-struct object {
-    sf::CircleShape mesh;
-    sf::Vector2f velocity;
-};
-
-struct input {
-    bool32 thrust, rotateLeft, rotateRight;
-};
-static input user_input;
-
+    struct input {
+        bool32 thrust, rotateLeft, rotateRight;
+    };
+    static input user_input;
+}
 
 int main()
 {
+    using namespace asteroids;
 
     //Package drop variables
     uint8 drop_counter = 0;
@@ -44,16 +46,16 @@ int main()
     sf::Vector2f midScreen(500, 500);
     sf::Vector2f velocity(0.f, 0.f);
     sf::Vector2f asteroid_velocity(1.f, 1.f);
-    
+
     uint8 clientId = 0xFF;
 
     //Init window
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "Massive Asteroids Multiplayer");
     window.setFramerateLimit(60);
-    
+
     //TODO: Implement visual thurst that only lives on client
 
-    clientObject allShips[c_max_clients];
+    ClientObject allShips[c_max_clients];
 
     //Struct asteriod
     struct object asteroid;
@@ -71,33 +73,33 @@ int main()
     QueryPerformanceFrequency(&clock_frequency);
 
     //Init socket stuffs
-    if (!Net::init())
+    if (!net::init())
     {
-        printf("Net::init failed\n");
+        printf("net::init failed\n");
         return false;
     }
 
-    Net::Socket sock;
+    net::Socket sock;
 
-    if (!Net::socket_create(&sock))
+    if (!net::socket_create(&sock))
     {
         printf("socket_create failed\n");
         return false;
     }
 
- 
+
     //Socket stuffs :-)
     uint8 buffer[c_socket_buffer_size];
     uint8 sendBuffer[c_socket_buffer_size];
-    Net::IP_Endpoint server_endpoint = Net::ip_endpoint_create(127, 0, 0, 1, c_port);
-    Net::IP_Endpoint from;
+    net::IP_Endpoint server_endpoint = net::ip_endpoint_create(127, 0, 0, 1, c_port);
+    net::IP_Endpoint from;
     uint32 bytes_received;
 
     /*Debug, join automatically!*/
     sendBuffer[0] = (int8)Client_Message::Join;
 
     //TODO, only allow one ID per client, or perhaps from server to fix that!
-    if (Net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
+    if (net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
     {
         std::cout << "Joining server\n";
     }
@@ -108,7 +110,7 @@ int main()
         //Start timer
         LARGE_INTEGER tick_start_time;
         QueryPerformanceCounter(&tick_start_time);
-        
+
         sf::Event event;
 
         while (window.pollEvent(event))
@@ -120,85 +122,85 @@ int main()
                 break;
 
             case sf::Event::KeyPressed:
-                   
+
                 switch (event.key.code)
                 {
 
-                //Increase thrust
+                    //Increase thrust
                 case sf::Keyboard::W:
                     user_input.thrust = true;
                     break;
 
-                //Rotate right
+                    //Rotate right
                 case sf::Keyboard::D:
-                   user_input.rotateRight = true;
+                    user_input.rotateRight = true;
 
                     break;
 
-                //Rotate left
+                    //Rotate left
                 case sf::Keyboard::A:
                     user_input.rotateLeft = true;
 
                     break;
 
-                //Join server
+                    //Join server
                 case sf::Keyboard::J:
-                    
+
                     //This is moved as I want the clients to join right away instead of waiting for J to be pushed. For testing purposes
-                    
+
                     /*sendBuffer[0] = (int8)Client_Message::Join;
 
                     //TODO, only allow one ID per client, or perhaps from server to fix that!
-                    if (Net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
+                    if (net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
                     {
                         std::cout << "Joining server\n";
                     }*/
-     
+
                     break;
                 }
 
-            
+
 
                 break;
             }
         }//End windows poll event
 
-     
-        
+
+
         //Check for responses
-        while (Net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
+        while (net::socket_receive(&sock, buffer, c_socket_buffer_size, &from, &bytes_received))
         {
 
             uint8* buffer_iter = buffer;
             uint8 message_type;
 
-           
+
             switch ((Server_Message)buffer[0])
             {
-  
-                case Server_Message::Join_Result:
-     
-                    uint8 success;
-                    //Deserialize first uint8 of message (Message type)
-                    deserialise_u8(&buffer_iter, &message_type);
-               
 
-                   //Deserilize second uint8 of message (Success or not)
-                    deserialise_u8(&buffer_iter, &success);
-                
-                    //If join was a success
-                    if (success)
-                    {
-                        //Deserilize third uint8 of message (ID)
-                        deserialise_u8(&buffer_iter, &clientId);
-                    }
+            case Server_Message::Join_Result:
 
-                    printf("Joined server with ClientID = %d\n", clientId);
+                uint8 success;
+                //Deserialize first uint8 of message (Message type)
+                deserialise_u8(&buffer_iter, &message_type);
 
-                    allShips[clientId].mesh.setFillColor(sf::Color::Blue);
-                
-                    break;
-            
+
+                //Deserilize second uint8 of message (Success or not)
+                deserialise_u8(&buffer_iter, &success);
+
+                //If join was a success
+                if (success)
+                {
+                    //Deserilize third uint8 of message (ID)
+                    deserialise_u8(&buffer_iter, &clientId);
+                }
+
+                printf("Joined server with ClientID = %d\n", clientId);
+
+                allShips[clientId].mesh.setFillColor(sf::Color::Blue);
+
+                break;
+
             case Server_Message::State:
 
 #ifdef PACKAGE_LOSS
@@ -232,8 +234,8 @@ int main()
                     deserialise_u8(&buffer_iter, &message_type);
                     bytes_read++;
 
-                   while(bytes_read < bytes_received)
-                   {
+                    while (bytes_read < bytes_received)
+                    {
                         //Get client ID
                         deserialise_u8(&buffer_iter, &bufferClientId);
                         bytes_read++;
@@ -247,12 +249,12 @@ int main()
                         bytes_read += 4;
 
                         allShips[bufferClientId].setVelocity(bufferPositionX, bufferPositionY);
-                   
+
 
                         //Get rotation
                         deserialise_u16(&buffer_iter, &bufferRotation);
                         bytes_read += 2;
-                    
+
                         allShips[bufferClientId].mesh.setRotation(bufferRotation);
                         allShips[bufferClientId].setPosition();
 
@@ -266,10 +268,10 @@ int main()
             }
 
         }
-     
+
         //Send input to server, if any
-       if((clientId != 0xFF) && (user_input.thrust || user_input.rotateLeft || user_input.rotateRight))
-       {                    
+        if ((clientId != 0xFF) && (user_input.thrust || user_input.rotateLeft || user_input.rotateRight))
+        {
             //1 byte: Set message type
             sendBuffer[0] = (Client_Message::Input);
             int bytes_written = 1;
@@ -283,29 +285,29 @@ int main()
             sendBuffer[2] = send_input;
 
             //Collect all key pressed in tick and send once per tick
-            if (!Net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
+            if (!net::socket_send(&sock, sendBuffer, c_socket_buffer_size, &server_endpoint))
             {
                 std::cout << "\nDidn't send key pressed";
             }
-       }
-
-       
-       asteroid.mesh.move(asteroid_velocity);    
-
-       window.clear();
-
-
-       for (uint8 i = 0; i < c_max_clients; ++i)
-       {   
-           if(allShips[i].connected)
-           {
-                window.draw(allShips[i].mesh);
-           }
         }
-       
-       
-       //window.draw(asteroid.mesh);
-       window.display();
+
+
+        asteroid.mesh.move(asteroid_velocity);
+
+        window.clear();
+
+
+        for (uint8 i = 0; i < c_max_clients; ++i)
+        {
+            if (allShips[i].connected)
+            {
+                window.draw(allShips[i].mesh);
+            }
+        }
+
+
+        //window.draw(asteroid.mesh);
+        window.display();
 
 
         //Wait until tick is done to continue with next tick
