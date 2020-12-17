@@ -52,6 +52,7 @@ TODO:
 #include <Network/CoreIncludes.h>
 #include <Shared/GameplayConcepts.h>
 #include <Shared/Utils.h>
+#include <Network/Game/PlayerInput.h>
 
 void main()
 {
@@ -87,9 +88,9 @@ void main()
 	u8* outBuffer = outgoingPacket.buffer.get();
 
 	net::NetworkIP client_endpoints[c_max_clients];
-	float32 time_since_heard_from_clients[c_max_clients];
+	float32 time_since_heard_from_clients[c_max_clients] = {};
 	PhysicsComponent client_objects[c_max_clients];
-	Player_Input client_inputs[c_max_clients];
+	InputState client_inputs[c_max_clients];
 
 	for (u16 i = 0; i < c_max_clients; ++i)
 	{
@@ -154,7 +155,7 @@ void main()
 						client_endpoints[slot] = from;
 						time_since_heard_from_clients[slot] = 0.0f;
 						client_objects[slot] = newObject;
-						client_inputs[slot] = {};
+						client_inputs[slot].reset();
 					}
 					else
 					{
@@ -199,16 +200,12 @@ void main()
 				u8 clientId;
 				memcpy(&clientId, &inBuffer[1], sizeof(&inBuffer[1]));
 
-
-
 				//Check so that the ID matches where it comes from
 				if (client_endpoints[clientId] == from)
 				{
 					u8 input = inBuffer[2];
 
-					client_inputs[clientId].thrust = input & 0x1;
-					client_inputs[clientId].rotateLeft = input & 0x2;
-					client_inputs[clientId].rotateRight = input & 0x4;
+					client_inputs[clientId].pressedConcepts = input;
 
 					time_since_heard_from_clients[clientId] = 0.0f;
 
@@ -228,23 +225,21 @@ void main()
 
 			if (client_endpoints[i].address)
 			{
-				if (client_inputs[i].thrust)
+				if (client_inputs[i].isPressed(InputConcept::Thrust))
 				{
-					//Increase velocity towards current rotation
 					client_objects[i].velocityX += static_cast<float32>(sin(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
 					client_objects[i].velocityY += static_cast<float32>(-cos(((float32)client_objects[i].rotation / 180 * M_PI))) / 10;
 				}
-
-				if (client_inputs[i].rotateLeft)
+				if (client_inputs[i].isPressed(InputConcept::RotateLeft))
 				{
-					//Ensure correct degrees
+					//Ensure correct degree
 					if (client_objects[i].rotation == 0)
 						client_objects[i].rotation = 360 - c_turn_speed;
 					else
 						client_objects[i].rotation -= c_turn_speed;
 
 				}
-				if (client_inputs[i].rotateRight)
+				if (client_inputs[i].isPressed(InputConcept::RotateRight))
 				{
 					//Ensure correct degrees
 					if (client_objects[i].rotation == 360)

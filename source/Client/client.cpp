@@ -6,6 +6,8 @@
 #include <Shared/Network/NetworkTypes.h>
 #include "client_object_component.cpp"
 #include <Shared/Network/Serialization.h>
+#include <Network/Game/PlayerInput.h>
+#include <SFML/Window/Keyboard.hpp>
 
 /* IMPROVEMENTS
 - Being able to press multiple keys simulatnious
@@ -20,15 +22,179 @@
 namespace dud
 {
 
-    struct object {
+    struct Asteroid {
         sf::CircleShape mesh;
         sf::Vector2f velocity;
     };
 
-    struct input {
-        bool thrust, rotateLeft, rotateRight;
+    struct GameContext
+    {
+        ClientObject* allShips;
+        Asteroid* asteroid;
+        net::Socket socket;
+        u8 clientId{ 0xFF };
+
+        sf::Vector2f asteroid_velocity { 1.f, 1.f };
     };
-    static input user_input;
+
+    struct RenderContext
+    {
+        sf::RenderWindow* window;
+        ClientObject* allShips;
+    };
+
+    void pollInput(InputState& keyboard)
+    {
+        static const std::vector<std::pair<sf::Keyboard::Key, InputConcept> > MappedInput = {
+            { sf::Keyboard::W, InputConcept::Thrust},
+            { sf::Keyboard::A, InputConcept::RotateLeft},
+            { sf::Keyboard::D, InputConcept::RotateRight},
+            { sf::Keyboard::Space, InputConcept::Action},
+        };
+
+        keyboard.reset();
+
+        for (auto& pair : MappedInput)
+        {
+            if (sf::Keyboard::isKeyPressed(pair.first))
+                keyboard.setPressed(pair.second);
+        }
+    }
+
+    void updateGame(GameContext& ctx)
+    {
+
+        //Socket stuffs :-)
+        NetworkPacket sharedPacket(c_socket_buffer_size);
+        u8* sharedBuffer = sharedPacket.buffer.get();
+
+        net::NetworkIP server_endpoint(127, 0, 0, 1, c_port);
+        net::NetworkIP from;
+        u32 bytes_received;
+
+
+
+        InputState currentInputState;
+        pollInput(currentInputState);
+
+
+        //Check for responses
+        while (net::ReceiveSocket(ctx.socket, sharedPacket, from, bytes_received))
+        {
+
+            u8* buffer_iter = sharedBuffer;
+            u8 message_type;
+
+
+            switch ((Server_Message)sharedBuffer[0])
+            {
+
+            case Server_Message::Join_Result:
+
+                u8 success;
+                //Deserialize first uint8 of message (Message type)
+                deserialize_u8(&buffer_iter, &message_type);
+
+
+                //Deserilize second uint8 of message (Success or not)
+                deserialize_u8(&buffer_iter, &success);
+
+                //If join was a success
+                if (success)
+                {
+                    //Deserilize third uint8 of message (ID)
+                    deserialize_u8(&buffer_iter, &ctx.clientId);
+                }
+
+                printf("Joined server with ClientID = %d\n", ctx.clientId);
+
+                ctx.allShips[ctx.clientId].mesh.setFillColor(sf::Color::Blue);
+
+                break;
+
+            case Server_Message::State:
+
+                u8 bufferClientId;
+                float32 bufferPositionX = 0.f;
+                float32 bufferPositionY = 0.f;
+                u16 bufferRotation = 0;
+                u32 bytes_read = 0;
+
+                //Get message type
+                deserialize_u8(&buffer_iter, &message_type);
+                bytes_read++;
+
+                while (bytes_read < bytes_received)
+                {
+                    //Get client ID
+                    deserialize_u8(&buffer_iter, &bufferClientId);
+                    bytes_read++;
+
+                    //Get positionX
+                    deserialize_f32(&buffer_iter, &bufferPositionX);
+                    bytes_read += 4;
+
+                    //Get positionY
+                    deserialize_f32(&buffer_iter, &bufferPositionY);
+                    bytes_read += 4;
+
+                    ctx.allShips[bufferClientId].setVelocity(bufferPositionX, bufferPositionY);
+
+
+                    //Get rotation
+                    deserialize_u16(&buffer_iter, &bufferRotation);
+                    bytes_read += 2;
+
+                    ctx.allShips[bufferClientId].mesh.setRotation(bufferRotation);
+                    ctx.allShips[bufferClientId].setPosition();
+
+                    ctx.allShips[bufferClientId].connected = true;
+
+                }
+                break;
+            }
+
+        }
+
+        //Send input to server, if any
+        const bool connectedToServer = ctx.clientId != 0xFF;
+        const bool hasInput = !currentInputState.isEmpty();
+        if (connectedToServer && hasInput)
+        {
+            //1 byte: Set message type
+            sharedBuffer[0] = (Client_Message::Input);
+
+            //2 byte: client ID
+            sharedBuffer[1] = ctx.clientId;
+
+            //3 byte: Set first bit to current thurst, second bit to rotateLeft and third bit to rotateRight
+            sharedBuffer[2] = static_cast<u8>(currentInputState.pressedConcepts);
+
+            //Collect all key pressed in tick and send once per tick
+            if (!net::SendSocket(ctx.socket, sharedPacket, server_endpoint))
+            {
+                std::cout << "\nDidn't send key pressed";
+            }
+        }
+
+        ctx.asteroid->mesh.move(ctx.asteroid_velocity);
+    }
+
+    void renderGame(RenderContext& renderCtx)
+    {
+        renderCtx.window->clear();
+
+        for (u8 i = 0; i < c_max_clients; ++i)
+        {
+            if (renderCtx.allShips[i].connected)
+            {
+                renderCtx.window->draw(renderCtx.allShips[i].mesh);
+            }
+        }
+
+        renderCtx.window->display();
+    }
+
 }
 
 int main()
@@ -44,9 +210,6 @@ int main()
     int speed = 5;
     sf::Vector2f midScreen(500, 500);
     sf::Vector2f velocity(0.f, 0.f);
-    sf::Vector2f asteroid_velocity(1.f, 1.f);
-
-    u8 clientId = 0xFF;
 
     //Init window
     sf::RenderWindow window(sf::VideoMode(1000, 1000), "Asteroids Client");
@@ -57,7 +220,7 @@ int main()
     ClientObject allShips[c_max_clients];
 
     //Struct asteriod
-    struct object asteroid;
+    struct Asteroid asteroid;
     asteroid.mesh.setRadius(50);
     asteroid.mesh.setFillColor(sf::Color::Red);
     asteroid.mesh.setPosition(sf::Vector2f(100, 50));
@@ -102,12 +265,22 @@ int main()
         std::cout << "Joining server\n";
     }
 
+    GameContext ctx;
+    ctx.allShips = allShips;
+    ctx.asteroid = &asteroid;
+    ctx.socket = socket;
+
+    RenderContext renderCtx;
+    renderCtx.window = &window;
+    renderCtx.allShips = allShips;
+
 
     while (window.isOpen())
     {
         //Start timer
         LARGE_INTEGER tick_start_time;
         QueryPerformanceCounter(&tick_start_time);
+
 
         sf::Event event;
 
@@ -123,24 +296,6 @@ int main()
 
                 switch (event.key.code)
                 {
-
-                    //Increase thrust
-                case sf::Keyboard::W:
-                    user_input.thrust = true;
-                    break;
-
-                    //Rotate right
-                case sf::Keyboard::D:
-                    user_input.rotateRight = true;
-
-                    break;
-
-                    //Rotate left
-                case sf::Keyboard::A:
-                    user_input.rotateLeft = true;
-
-                    break;
-
                     //Join server
                 case sf::Keyboard::J:
 
@@ -163,149 +318,9 @@ int main()
             }
         }//End windows poll event
 
+        updateGame(ctx);
+        renderGame(renderCtx);
 
-
-        //Check for responses
-        while (net::ReceiveSocket(socket, sharedPacket, from, bytes_received))
-        {
-
-            u8* buffer_iter = sharedBuffer;
-            u8 message_type;
-
-
-            switch ((Server_Message)sharedBuffer[0])
-            {
-
-            case Server_Message::Join_Result:
-
-                u8 success;
-                //Deserialize first uint8 of message (Message type)
-                deserialize_u8(&buffer_iter, &message_type);
-
-
-                //Deserilize second uint8 of message (Success or not)
-                deserialize_u8(&buffer_iter, &success);
-
-                //If join was a success
-                if (success)
-                {
-                    //Deserilize third uint8 of message (ID)
-                    deserialize_u8(&buffer_iter, &clientId);
-                }
-
-                printf("Joined server with ClientID = %d\n", clientId);
-
-                allShips[clientId].mesh.setFillColor(sf::Color::Blue);
-
-                break;
-
-            case Server_Message::State:
-
-#ifdef PACKAGE_LOSS
-                //Randomize when package loss starts
-                if (!loss_sequence_running && ((rand() % 20) == 0))
-                {
-                    loss_sequence_running = true;
-                }
-                //Randomize how many packages are lost every time
-                if (drop_counter > packages_lost)
-                {
-                    loss_sequence_running = false;
-                    drop_counter = 0;
-                    packages_lost = rand() % 20;
-                }
-                //Count packages lost
-                if (loss_sequence_running) {
-                    drop_counter++;
-                }
-                //Do magic when we actually got a package through :-)
-                else
-                {
-#endif
-                    u8 bufferClientId;
-                    float32 bufferPositionX = 0.f;
-                    float32 bufferPositionY = 0.f;
-                    u16 bufferRotation = 0;
-                    u32 bytes_read = 0;
-
-                    //Get message type
-                    deserialize_u8(&buffer_iter, &message_type);
-                    bytes_read++;
-
-                    while (bytes_read < bytes_received)
-                    {
-                        //Get client ID
-                        deserialize_u8(&buffer_iter, &bufferClientId);
-                        bytes_read++;
-
-                        //Get positionX
-                        deserialize_f32(&buffer_iter, &bufferPositionX);
-                        bytes_read += 4;
-
-                        //Get positionY
-                        deserialize_f32(&buffer_iter, &bufferPositionY);
-                        bytes_read += 4;
-
-                        allShips[bufferClientId].setVelocity(bufferPositionX, bufferPositionY);
-
-
-                        //Get rotation
-                        deserialize_u16(&buffer_iter, &bufferRotation);
-                        bytes_read += 2;
-
-                        allShips[bufferClientId].mesh.setRotation(bufferRotation);
-                        allShips[bufferClientId].setPosition();
-
-                        allShips[bufferClientId].connected = true;
-
-                    }
-#ifdef PACKAGE_LOSS
-                }
-#endif
-                break;
-            }
-
-        }
-
-        //Send input to server, if any
-        if ((clientId != 0xFF) && (user_input.thrust || user_input.rotateLeft || user_input.rotateRight))
-        {
-            //1 byte: Set message type
-            sharedBuffer[0] = (Client_Message::Input);
-            int bytes_written = 1;
-
-            //2 byte: client ID
-            sharedBuffer[1] = clientId;
-            bytes_written += sizeof(clientId); //memcpy(&sendBuffer[bytes_written], &clientId, sizeof(clientId)); //Question: Why would you use memcpy?
-
-            //3 byte: Set first bit to current thurst, second bit to rotateLeft and third bit to rotateRight
-            u8 send_input = (u8)user_input.thrust | (u8)user_input.rotateLeft << 1 | (u8)user_input.rotateRight << 2;
-            sharedBuffer[2] = send_input;
-
-            //Collect all key pressed in tick and send once per tick
-            if (!net::SendSocket(socket, sharedPacket, server_endpoint))
-            {
-                std::cout << "\nDidn't send key pressed";
-            }
-        }
-
-
-        asteroid.mesh.move(asteroid_velocity);
-
-        window.clear();
-
-
-        for (u8 i = 0; i < c_max_clients; ++i)
-        {
-            if (allShips[i].connected)
-            {
-                window.draw(allShips[i].mesh);
-            }
-        }
-
-
-        //window.draw(asteroid.mesh);
-        window.display();
 
 
         //Wait until tick is done to continue with next tick
@@ -324,11 +339,6 @@ int main()
 
             time_taken_s = time_since(tick_start_time, clock_frequency);
         }
-
-        user_input.thrust = NULL;
-        user_input.rotateRight = NULL;
-        user_input.rotateLeft = NULL;
-
     }
 
     window.close();

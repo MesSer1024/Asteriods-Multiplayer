@@ -18,13 +18,15 @@ namespace dud
 
     static_assert(static_cast<u32>(InputConcept::LAST_ENTRY) <= 32);
 
-    struct KeyboardState
+    struct InputState
     {
-        void reset() { pressedConcepts = BitWordType{}; }
+        void reset() { pressedConcepts = bitword::Zero; }
 
         void setPressed(InputConcept id) { bitword::setBit(pressedConcepts, static_cast<u32>(id)); }
 
         bool isPressed(InputConcept id) { return bitword::getBit(pressedConcepts, static_cast<u32>(id)); }
+
+        bool isEmpty() { return pressedConcepts == bitword::Zero; }
 
         template<class Action>
         void foreachPressed(Action&& action)
@@ -35,7 +37,7 @@ namespace dud
             });
         }
 
-        BitWordType pressedConcepts{};
+        BitWordType pressedConcepts = bitword::Zero;
     };
 
     // </Example>

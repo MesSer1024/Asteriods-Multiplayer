@@ -16,18 +16,18 @@ namespace dud
 		}
 	};
 
-	using KeyboardStateFixture = PlayerInputFixture;
+	using InputStateFixture = PlayerInputFixture;
 
-	TEST_F(KeyboardStateFixture, ctor_pressedKeysAreEmpty)
+	TEST_F(InputStateFixture, ctor_pressedKeysAreEmpty)
 	{
-		KeyboardState state;
+		InputState state;
 
 		ASSERT_EQ(state.pressedConcepts, BitWordType{});
 	}
 
-	TEST_F(KeyboardStateFixture, reset_clearsState)
+	TEST_F(InputStateFixture, reset_clearsState)
 	{
-		KeyboardState state;
+		InputState state;
 
 		state.pressedConcepts = 0xfafafa;
 
@@ -35,9 +35,9 @@ namespace dud
 		ASSERT_EQ(state.pressedConcepts, BitWordType{});
 	}
 
-	TEST_F(KeyboardStateFixture, setAndGetPressedKeys)
+	TEST_F(InputStateFixture, setAndGetPressedKeys)
 	{
-		KeyboardState state;
+		InputState state;
 		InputConcept pressed[] = { InputConcept::RotateRight, InputConcept::RotateLeft, InputConcept::Action, InputConcept::Thrust };
 
 		for (auto& c : pressed)
@@ -48,9 +48,9 @@ namespace dud
 		}
 	}
 
-	TEST_F(KeyboardStateFixture, foreachPressedKey_returnsRightKey)
+	TEST_F(InputStateFixture, foreachPressedKey_returnsRightKey)
 	{
-		KeyboardState state;
+		InputState state;
 		InputConcept pressed[] = { InputConcept::RotateRight, InputConcept::Action };
 
 		for (auto& c : pressed)
