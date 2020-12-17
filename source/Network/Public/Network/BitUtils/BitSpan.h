@@ -91,7 +91,7 @@ public:
 		clearDanglingBits();
 
 		foreachWord([&it, bitAction = std::forward<BitAction&&>(action)](auto word) {
-			bitword::foreachOne(bitAction, word, it * NumBitsInWord);
+			bitword::foreachOne(word, bitAction, it * NumBitsInWord);
 			it++;
 		});
 	}

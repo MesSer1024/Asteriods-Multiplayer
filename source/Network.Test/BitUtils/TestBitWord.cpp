@@ -88,10 +88,10 @@ TEST(bitword_fixture, foreachSetBit_invokedWithCorrectBitIndex)
 		if (expected[i])
 			data |= (one << i);
 
-	bitword::foreachOne([&output](u32 bitIdx) {
+	bitword::foreachOne(data, [&output](u32 bitIdx) {
 		output[bitIdx] = true;
-		},
-		data);
+		}
+	);
 
 	for (uint i = 0; i < NumBitsInWord; ++i)
 		ASSERT_EQ(output[i], expected[i]);
@@ -104,32 +104,32 @@ TEST(bitword_fixture, foreachSetBit_tresholds)
 	{
 		const u32 ExpectedBitIndex = 0;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		const u32 ExpectedBitIndex = 1;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		const u32 ExpectedBitIndex = 31;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		const u32 ExpectedBitIndex = 32;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		const u32 ExpectedBitIndex = 33;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		const u32 ExpectedBitIndex = 63;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 }
 
@@ -140,37 +140,37 @@ TEST(bitword_fixture, foreachSetBit_withReportedIndexOffset)
 	{
 		const u32 ExpectedBitIndex = 0;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 14;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 33;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 63 - IndexOffset;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 64 - IndexOffset;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 55;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 63;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 }
 
@@ -181,27 +181,27 @@ TEST(bitword_fixture, foreachSetBit_withReportedIndexOffsetCanBeReallyBig)
 	{
 		const u32 ExpectedBitIndex = 0;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 14;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 33;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 55;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 	{
 		const u32 ExpectedBitIndex = 63;
 		BitWordType data = one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, data, IndexOffset);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex + IndexOffset); }, IndexOffset);
 	}
 }
 
@@ -283,31 +283,31 @@ TEST(bitword_fixture, testSetAndGet_invalidValues)
 	//{
 	//	const u32 ExpectedBitIndex = 64;
 	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
 	//}
 	//{
 
 	//	const u32 ExpectedBitIndex = 65;
 	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
 	//}
 	//{
 
 	//	const u32 ExpectedBitIndex = 127;
 	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
 	//}
 	//{
 
 	//	const u32 ExpectedBitIndex = 128;
 	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
 	//}
 	//{
 
 	//	const u32 ExpectedBitIndex = 129;
 	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
 	//}
 //}
 
@@ -318,12 +318,12 @@ TEST(bitword_fixture, foreachSetBit_weirdCastBehavior_andUB)
 	{
 		const u32 ExpectedBitIndex = 3;
 		BitWordType data = s32_one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % 32); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % 32); });
 	}
 	{
 		const u32 ExpectedBitIndex = 30;
 		BitWordType data = s32_one << ExpectedBitIndex;
-		bitword::foreachOne([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); }, data);
+		bitword::foreachOne(data, [&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex); });
 	}
 	{
 		// I think this is a defined behavior
@@ -336,13 +336,13 @@ TEST(bitword_fixture, foreachSetBit_weirdCastBehavior_andUB)
 	//	// this is UB
 	//	const u32 ExpectedBitIndex = 32;
 	//	BitWordType data = s32_one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, 0u); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, 0u); });
 	//}
 	//{
 	//	// this is UB
 	//	const u32 ExpectedBitIndex = 33;
 	//	BitWordType data = s32_one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % 32); }, data);
+	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % 32); });
 	//}
 	//{
 	//	// this is UB
