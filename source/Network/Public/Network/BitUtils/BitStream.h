@@ -2,6 +2,8 @@
 #pragma once
 
 #include <Network/BitUtils/BitBuffer.h>
+#include <Network/BitUtils/BitWord.h>
+#include <tuple>
 
 namespace dud
 {
@@ -35,22 +37,82 @@ namespace dud
 
 	class BitStream final
 	{
+		enum { NumMaxBitsBuffer = 2000 * 8 }; // Enough to handle MTU
+
 	public:
 		BitStream()
 			: _buffer{}
 			, _bitPos{}
-			, _unflushed{}
-			, _numMaxBits(2048 * 8)
+			, _numWrittenBits{}
+			, _numMaxPossibleBits(NumMaxBitsBuffer)
 		{
 		}
 
 		u32 tell() { return _bitPos; }
+		void seek(u32 pos) { _bitPos = pos; }
+
+		float32 readFloat(u32 bits) 
+		{
+			return {};
+		}
+
+		u32 readUnsigned(u32 numBits)
+		{
+			DUD_ASSERT(numBits <= 32);
+			DUD_ASSERT(_bitPos + numBits < _numWrittenBits);
+
+			const u32 startWordIdx = bitword::getWordIdxForBit(_bitPos);
+			const u32 endWordIdx = bitword::getWordIdxForBit(_bitPos + numBits - 1);
+			const u32 bitOffset = _bitPos % NumBitsInWord;
+
+			BitWordType output;
+
+			// populate output word
+			if (endWordIdx != startWordIdx)
+			{
+				const u32 bitsInFirstChunk = NumBitsInWord - bitOffset;
+				output = bitword::readBitRangeAsValue(_buffer[startWordIdx], bitOffset, NumBitsInWord);
+				output |= (bitword::readBitRangeAsValue(_buffer[startWordIdx + 1], numBits - bitsInFirstChunk) << bitsInFirstChunk);
+			}
+			else
+			{
+				output = bitword::readBitRangeAsValue(_buffer[startWordIdx], bitOffset, bitOffset + numBits);
+			}
+
+			// advance bit-pointer
+			_bitPos += numBits;
+
+			return static_cast<u32>(output);
+		}
+
+		void populateFrom(DataSpan<u8> input)
+		{
+			constexpr u32 BufferSize = sizeof(_buffer);
+			const u32 inputSize = input.size();
+			const u32 byteCount = min(inputSize, BufferSize);
+
+			memcpy(_buffer, input.data(), byteCount);
+
+			_bitPos = byteCount * 8;
+			_numWrittenBits = _bitPos;
+		}
+
+		u32 transferTo(DataSpan<u8> output)
+		{
+			constexpr u32 BufferSize = sizeof(_buffer);
+			const u32 outputSize = output.size();
+			const u32 writtenBytes = min(outputSize, BufferSize);
+
+			memcpy(output.data(), _buffer, writtenBytes);
+
+			return writtenBytes;
+		}
 
 	private:
 		u32 _bitPos;
-		u32 _numMaxBits;
-		BitWordType _unflushed;
-		BitWordType _buffer[bitword::getNumWordsRequired(2048 * 8)];
+		u32 _numWrittenBits;
+		u32 _numMaxPossibleBits;
+		BitWordType _buffer[bitword::getNumWordsRequired(NumMaxBitsBuffer)];
 	};
 
 }
