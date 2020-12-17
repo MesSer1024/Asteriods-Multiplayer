@@ -56,7 +56,7 @@ TEST_F(BitSpanFixture, setAll_rangeContainOnes) {
 TEST_F(BitSpanFixture, danglingBits_handledBySetAndClear) {
 	const u32 NumWords = 7;
 	const u32 BitCount = NumBitsInWord * NumWords - 37;
-	constexpr BitWordType danglingMask = bitword::getDanglingPart(BitCount);
+	constexpr BitWordType danglingMask = bitword::getDanglingPartMask(BitCount);
 	const BitWordType Default = 0xBEBEBEBEBEBEBEBE;
 
 	BitWordType buffer[NumWords];
@@ -105,7 +105,7 @@ TEST_F(BitSpanFixture, zeroFullWords_only14bits) {
 	meta::fill_container(buffer, Default);
 
 	BitSpan span(buffer, 14);
-	constexpr BitWordType danglingMask = bitword::getDanglingPart(14);
+	constexpr BitWordType danglingMask = bitword::getDanglingPartMask(14);
 
 	span.setAll();
 	span.clearAll();
@@ -204,7 +204,7 @@ TEST_F(BitSpanFixture, functionality_canHandleLargeSpan) {
 		for (uint i = 0; i < NumWords - 1; ++i)
 			ASSERT_EQ(largeBuffer[i], bitword::Ones);
 
-		ASSERT_EQ(largeBuffer[NumWords - 1], bitword::Ones & bitword::getDanglingPart(NumBits));
+		ASSERT_EQ(largeBuffer[NumWords - 1], bitword::Ones & bitword::getDanglingPartMask(NumBits));
 	}
 
 	{
@@ -354,7 +354,7 @@ TEST_F(BitSpanFixture, operatorCmp) {
 	}
 	{
 		// parts of this word is shared and part is unshared, validate that it only looks at the part that is shared
-		constexpr BitWordType DanglingMask = bitword::getDanglingPart(NumBits);
+		constexpr BitWordType DanglingMask = bitword::getDanglingPartMask(NumBits);
 		const BitWordType EqualPart = 0xBEBEBEBEBEBEBEBE;
 
 		lhsBuffer[NumWords - 1] = (EqualPart & DanglingMask) | (bitword::Ones & ~DanglingMask);

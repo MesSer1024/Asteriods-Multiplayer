@@ -14,7 +14,7 @@ public:
 	BitRangeZipper(BitWordType* __restrict lhs, BitWordType* __restrict rhs, u32 numBits)
 		: _lhs(lhs)
 		, _rhs(rhs)
-		, _danglingMask(bitword::hasDanglingPart(numBits) ? bitword::getDanglingPart(numBits) : bitword::Ones)
+		, _danglingMask(bitword::hasDanglingPart(numBits) ? bitword::getDanglingPartMask(numBits) : bitword::Ones)
 		, _numWords(bitword::getNumWordsRequired(numBits))
 		, _numBits(numBits)
 	{

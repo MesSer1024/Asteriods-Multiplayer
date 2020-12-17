@@ -12,67 +12,101 @@ static_assert(sizeof(BitWordType) == sizeof(u64));
 TEST(bitword_fixture, danglingMaskFromBitCount_validateCalculations) {
 	using namespace bitword;
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(0);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(0);
 		ASSERT_EQ(mask, BitWordType{ 0u });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(1);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(1);
 		ASSERT_EQ(mask, BitWordType{ 1u });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(2);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(2);
 		ASSERT_EQ(mask, BitWordType{ 0b11 });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(3);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(3);
 		ASSERT_EQ(mask, BitWordType{ 0b111 });
 	}
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(4);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(4);
 		ASSERT_EQ(mask, BitWordType{ 0xF });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(6);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(6);
 		ASSERT_EQ(mask, BitWordType{ 0x3f });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(8);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(8);
 		ASSERT_EQ(mask, BitWordType{ 0xFF });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(32);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(32);
 		ASSERT_EQ(mask, BitWordType{ 0xFFFFFFFF });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(33);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(33);
 		ASSERT_EQ(mask, BitWordType{ 0x1FFFFFFFF });
 	}
 
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(63);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(63);
 		ASSERT_EQ(mask, BitWordType{ 0x7FFFFFFFFFFFFFFF });
 	}
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(64);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(64);
 		ASSERT_EQ(mask, BitWordType{ 0 });
 	}
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(65);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(65);
 		ASSERT_EQ(mask, BitWordType{ 1 });
 	}
 	{
-		constexpr BitWordType mask = bitword::getDanglingPart(130);
+		constexpr BitWordType mask = bitword::getDanglingPartMask(130);
 		ASSERT_EQ(mask, BitWordType{ 0b11 });
 	}
 }
 
+TEST(bitword_fixture, getNumWordsRequired_validateCount) {
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(0);
+		ASSERT_EQ(count, 0u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(1);
+		ASSERT_EQ(count, 1u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(63);
+		ASSERT_EQ(count, 1u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(64);
+		ASSERT_EQ(count, 1u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(65);
+		ASSERT_EQ(count, 2u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(127);
+		ASSERT_EQ(count, 2u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(128);
+		ASSERT_EQ(count, 2u);
+	}
+	{
+		constexpr BitWordType count = bitword::getNumWordsRequired(129);
+		ASSERT_EQ(count, 3u);
+	}
+}
 
 TEST(bitword_fixture, foreachSetBit_invokedWithCorrectBitIndex)
 {
@@ -337,6 +371,96 @@ TEST(bitword_fixture, createMask_canGenerateOffsetBasedMasks)
 		const BitWordType created = bitword::createMask(firstIdx, i);
 		const BitWordType expected = generateMask(firstIdx, i);
 		ASSERT_EQ(created, expected);
+	}
+}
+
+TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
+{
+	const BitWordType word = bitword::Ones;
+
+	u32 firstIdx = 4;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+
+	firstIdx = 11;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+
+	firstIdx = 17;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+
+	firstIdx = 37;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+
+	firstIdx = 55;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+
+	firstIdx = 63;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType mask = bitword::createMask(firstIdx, i);
+		const BitWordType expected = mask >> firstIdx;
+		ASSERT_EQ(bits, expected);
+	}
+}
+
+TEST(bitword_fixture, readBitRangeAsValue_returnsValueAssociatedWithMask)
+{
+	const BitWordType word = 0xEACAFE05FEFE;
+
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 4);
+		const BitWordType expected = word & 0xF;
+		ASSERT_EQ(bits, expected);
+	}
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 16);
+		const BitWordType expected = word & 0xFFFF;
+		ASSERT_EQ(bits, expected);
+	}
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 18);
+		const BitWordType expected = word & 0x3FFFF;
+		ASSERT_EQ(bits, expected);
+	}
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, 4, 18);
+		const BitWordType expected = (word >> 4) & 0x3FFF;
+		ASSERT_EQ(bits, expected);
+	}
+	{
+		const BitWordType bits = bitword::readBitRangeAsValue(word, 15, 31);
+		const BitWordType expected = (word >> 15) & 0xFFFF;
+		ASSERT_EQ(bits, expected);
 	}
 }
 

@@ -22,7 +22,7 @@ public:
 
 	inline BitSpan(BitWordType* data, u32 numBits)
 		: _data(data)
-		, _danglingMask(bitword::hasDanglingPart(numBits) ? bitword::getDanglingPart(numBits) : bitword::Ones)
+		, _danglingMask(bitword::hasDanglingPart(numBits) ? bitword::getDanglingPartMask(numBits) : bitword::Ones)
 		, _numWords(bitword::getNumWordsRequired(numBits))
 		, _numBits(numBits)
 	{

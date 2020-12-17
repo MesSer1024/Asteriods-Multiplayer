@@ -30,13 +30,25 @@ constexpr BitWordType createMask(u32 firstBit, u32 lastBit)
 	return mask;
 }
 
+constexpr BitWordType readBitRangeAsValue(const BitWordType word, u32 lastBit)
+{
+	const BitWordType mask = createMask(0, lastBit);
+	return word & mask;
+}
+
+constexpr BitWordType readBitRangeAsValue(const BitWordType word, u32 firstBit, u32 lastBit)
+{
+	const BitWordType mask = createMask(firstBit, lastBit);
+	return (word & mask) >> firstBit;
+}
+
 constexpr bool hasDanglingPart(u32 numBits)
 {
 	return (numBits % NumBitsInWord != 0);
 }
 
 constexpr u32 getNumWordsRequired(u32 numBits) {
-	const u32 numWords = numBits / NumBitsInWord + static_cast<u32>(hasDanglingPart(numBits));
+	const u32 numWords = (numBits / NumBitsInWord) + hasDanglingPart(numBits);
 	return numWords;
 }
 
@@ -46,7 +58,7 @@ constexpr u32 getNumBytesRequiredToRepresentWordBasedBitBuffer(u32 numBits) {
 	return numBytes;
 }
 
-constexpr BitWordType getDanglingPart(u32 numBits)
+constexpr BitWordType getDanglingPartMask(u32 numBits)
 {
 	numBits = numBits % NumBitsInWord;
 

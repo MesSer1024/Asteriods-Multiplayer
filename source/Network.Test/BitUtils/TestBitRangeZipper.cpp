@@ -147,7 +147,7 @@ TEST_F(BitRangeZipperFixture, foreachWord_validateZeroWordSizeAndDanglingBits)
 		}
 		else
 		{
-			const BitWordType expected = bitword::Ones & bitword::getDanglingPart(BitCount);
+			const BitWordType expected = bitword::Ones & bitword::getDanglingPartMask(BitCount);
 			ASSERT_EQ(outputA[i], expected);
 			ASSERT_EQ(outputB[i], expected);
 		}
