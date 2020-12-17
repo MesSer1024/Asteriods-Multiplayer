@@ -20,9 +20,9 @@ constexpr BitWordType Ones = BitWordType{ ~0ull };
 
 constexpr BitWordType createMask(u32 firstBit, u32 lastBit)
 {
-	DUD_ASSERT(firstBit < lastBit && firstBit < NumBitsInWord && lastBit < NumBitsInWord);
+	DUD_ASSERT(firstBit <= lastBit && firstBit < NumBitsInWord && lastBit <= NumBitsInWord);
 
-	const BitWordType upper = (1ull << lastBit) - 1;
+	const BitWordType upper = lastBit == NumBitsInWord ? ~0ull : (1ull << lastBit) - 1;
 	const BitWordType lower = (1ull << firstBit) - 1;
 
 	const BitWordType mask = upper & ~lower;
@@ -103,9 +103,9 @@ inline bool getBit(BitWordType word, u32 bit)
 	return word & mask;
 }
 
-inline BitWordType countSetBits(BitWordType word)
+inline u32 countSetBits(BitWordType word)
 {
-	return __popcnt64(word);
+	return static_cast<u32>(__popcnt64(word));
 }
 
 template<class BitAction>

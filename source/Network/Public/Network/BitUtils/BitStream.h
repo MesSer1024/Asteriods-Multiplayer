@@ -4,6 +4,7 @@
 #include <Network/BitUtils/BitBuffer.h>
 #include <Network/BitUtils/BitWord.h>
 #include <tuple>
+#include <math.h>
 
 namespace dud
 {
@@ -43,23 +44,59 @@ namespace dud
 		BitStream()
 			: _buffer{}
 			, _bitPos{}
-			, _numWrittenBits{}
-			, _numMaxPossibleBits(NumMaxBitsBuffer)
+			, _endOfStream{}
 		{
 		}
 
 		u32 tell() { return _bitPos; }
 		void seek(u32 pos) { _bitPos = pos; }
 
-		float32 readFloat(u32 bits) 
+		float32 readFloat(u32 numBits)
 		{
-			return {};
+			DUD_NOT_DEFINED;
+			return {}; // #todo
+		}
+
+		void writeUnsigned(u32 data, u32 numBits)
+		{
+			if (numBits == 0)
+				return;
+
+			DUD_ASSERT(numBits <= 32);
+			DUD_ASSERT(_bitPos + numBits < NumMaxBitsBuffer)
+
+			const u32 startWordIdx = bitword::getWordIdxForBit(_bitPos);
+			const u32 endWordIdx = bitword::getWordIdxForBit(_bitPos + numBits - 1);
+			const u32 bitOffset = _bitPos % NumBitsInWord;
+
+			// populate output word
+			if (endWordIdx != startWordIdx)
+			{
+				const u32 bitsInFirstChunk = NumBitsInWord - bitOffset;
+
+				BitWordType& word1 = _buffer[startWordIdx];
+				BitWordType& word2 = _buffer[startWordIdx + 1];
+
+				bitword::writeBits(word1, data, bitOffset, NumBitsInWord);
+				bitword::writeBits(word2, data >> bitsInFirstChunk, 0, numBits - bitsInFirstChunk);
+			}
+			else
+			{
+				bitword::writeBits(_buffer[startWordIdx], data, bitOffset, bitOffset + numBits);
+			}
+
+			// advance bit-pointer
+			_bitPos += numBits;
+			_endOfStream = _bitPos;
 		}
 
 		u32 readUnsigned(u32 numBits)
 		{
+			if (numBits == 0)
+				return 0;
+
 			DUD_ASSERT(numBits <= 32);
-			DUD_ASSERT(_bitPos + numBits < _numWrittenBits);
+			DUD_ASSERT(_bitPos + numBits <= _endOfStream);
 
 			const u32 startWordIdx = bitword::getWordIdxForBit(_bitPos);
 			const u32 endWordIdx = bitword::getWordIdxForBit(_bitPos + numBits - 1);
@@ -71,12 +108,12 @@ namespace dud
 			if (endWordIdx != startWordIdx)
 			{
 				const u32 bitsInFirstChunk = NumBitsInWord - bitOffset;
-				output = bitword::readBitRangeAsValue(_buffer[startWordIdx], bitOffset, NumBitsInWord);
-				output |= (bitword::readBitRangeAsValue(_buffer[startWordIdx + 1], numBits - bitsInFirstChunk) << bitsInFirstChunk);
+				output = bitword::readBits(_buffer[startWordIdx], bitOffset, NumBitsInWord);
+				output |= (bitword::readBits(_buffer[startWordIdx + 1], numBits - bitsInFirstChunk) << bitsInFirstChunk);
 			}
 			else
 			{
-				output = bitword::readBitRangeAsValue(_buffer[startWordIdx], bitOffset, bitOffset + numBits);
+				output = bitword::readBits(_buffer[startWordIdx], bitOffset, bitOffset + numBits);
 			}
 
 			// advance bit-pointer
@@ -94,7 +131,7 @@ namespace dud
 			memcpy(_buffer, input.data(), byteCount);
 
 			_bitPos = byteCount * 8;
-			_numWrittenBits = _bitPos;
+			_endOfStream = _bitPos;
 		}
 
 		u32 transferTo(DataSpan<u8> output)
@@ -109,9 +146,9 @@ namespace dud
 		}
 
 	private:
+
 		u32 _bitPos;
-		u32 _numWrittenBits;
-		u32 _numMaxPossibleBits;
+		u32 _endOfStream;
 		BitWordType _buffer[bitword::getNumWordsRequired(NumMaxBitsBuffer)];
 	};
 
