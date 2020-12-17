@@ -252,64 +252,8 @@ TEST(bitword_fixture, modifyBit_sameAsSetAndClear)
 	}
 }
 
-TEST(bitword_fixture, testSetAndGet_invalidValues)
-{
-	// all of these are UB
-	//{
-	//	BitWordType value = 0;
-	//	bitword::setBit(value, 64);
-	//	ASSERT_TRUE(bitword::getBit(value, 64));
-	//}
-	//{
-	//	BitWordType value = 0;
-	//	bitword::setBit(value, 65);
-	//	ASSERT_TRUE(bitword::getBit(value, 65));
-	//}
-	//{
-	//	BitWordType value = 0;
-	//	bitword::setBit(value, 65);
-	//	ASSERT_TRUE(bitword::getBit(value, 65));
-	//}
-}
-
 #pragma warning( push )
 #pragma warning( disable : 4293 ) // warning C4293: '<<': shift count negative or too big, undefined behavior
-
-//TEST(bitword_fixture, foreachSetBit_shiftTooLarge_ub)
-//{
-	//BitWordType one = 1;
-
-	// all of these are UB
-	//{
-	//	const u32 ExpectedBitIndex = 64;
-	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
-	//}
-	//{
-
-	//	const u32 ExpectedBitIndex = 65;
-	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
-	//}
-	//{
-
-	//	const u32 ExpectedBitIndex = 127;
-	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
-	//}
-	//{
-
-	//	const u32 ExpectedBitIndex = 128;
-	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
-	//}
-	//{
-
-	//	const u32 ExpectedBitIndex = 129;
-	//	BitWordType data = one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % NumBitsInWord); });
-	//}
-//}
 
 TEST(bitword_fixture, foreachSetBit_weirdCastBehavior_andUB)
 {
@@ -332,26 +276,68 @@ TEST(bitword_fixture, foreachSetBit_weirdCastBehavior_andUB)
 		BitWordType casted = 0xFFFFFFFF80000000;
 		ASSERT_EQ(data, casted);
 	}
-	//{
-	//	// this is UB
-	//	const u32 ExpectedBitIndex = 32;
-	//	BitWordType data = s32_one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, 0u); });
-	//}
-	//{
-	//	// this is UB
-	//	const u32 ExpectedBitIndex = 33;
-	//	BitWordType data = s32_one << ExpectedBitIndex;
-	//	bitword::foreachSetBit([&](u32 bit) { ASSERT_EQ(bit, ExpectedBitIndex % 32); });
-	//}
-	//{
-	//	// this is UB
-	//	const u32 ExpectedBitIndex = 63;
-	//	BitWordType data = s32_one << ExpectedBitIndex;
-	//	BitWordType casted = 0xFFFFFFFF80000000;
-	//	ASSERT_EQ(data, casted);
-	//}
 }
 #pragma warning( pop )
+
+namespace
+{
+	BitWordType generateMask(u32 firstBit, u32 lastBit)
+	{
+		BitWordType output{};
+		const BitWordType one = 1u;
+
+		for (uint i = firstBit; i < lastBit; ++i)
+		{
+			output |= (one << i);
+		}
+
+		return output;
+	}
+}
+
+TEST(bitword_fixture, createMask_canGenerateZeroBasedMasks)
+{
+	for (uint i = 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType created = bitword::createMask(0, i);
+		const BitWordType expected = generateMask(0, i);
+		ASSERT_EQ(created, expected);
+	}
+}
+
+TEST(bitword_fixture, createMask_canGenerateOffsetBasedMasks)
+{
+	u32 firstIdx = 4;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType created = bitword::createMask(firstIdx, i);
+		const BitWordType expected = generateMask(firstIdx, i);
+		ASSERT_EQ(created, expected);
+	}
+
+	firstIdx = 11;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType created = bitword::createMask(firstIdx, i);
+		const BitWordType expected = generateMask(firstIdx, i);
+		ASSERT_EQ(created, expected);
+	}
+
+	firstIdx = 31;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType created = bitword::createMask(firstIdx, i);
+		const BitWordType expected = generateMask(firstIdx, i);
+		ASSERT_EQ(created, expected);
+	}
+
+	firstIdx = 45;
+	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
+	{
+		const BitWordType created = bitword::createMask(firstIdx, i);
+		const BitWordType expected = generateMask(firstIdx, i);
+		ASSERT_EQ(created, expected);
+	}
+}
 
 }

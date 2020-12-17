@@ -18,6 +18,18 @@ namespace bitword
 constexpr BitWordType Zero = BitWordType{ 0 };
 constexpr BitWordType Ones = BitWordType{ ~0ull };
 
+constexpr BitWordType createMask(u32 firstBit, u32 lastBit)
+{
+	DUD_ASSERT(firstBit < lastBit && firstBit < NumBitsInWord && lastBit < NumBitsInWord);
+
+	const BitWordType upper = (1ull << lastBit) - 1;
+	const BitWordType lower = (1ull << firstBit) - 1;
+
+	const BitWordType mask = upper & ~lower;
+
+	return mask;
+}
+
 constexpr bool hasDanglingPart(u32 numBits)
 {
 	return (numBits % NumBitsInWord != 0);
