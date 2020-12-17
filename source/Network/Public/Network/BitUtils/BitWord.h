@@ -20,7 +20,7 @@ constexpr BitWordType Ones = BitWordType{ ~0ull };
 
 constexpr BitWordType createMask(u32 firstBit, u32 lastBit)
 {
-	DUD_ASSERT(firstBit < lastBit && firstBit < NumBitsInWord && lastBit <= NumBitsInWord);
+	DUD_ASSERT(firstBit < lastBit && firstBit < NumBitsInWord && lastBit < NumBitsInWord);
 
 	const BitWordType upper = (1ull << lastBit) - 1;
 	const BitWordType lower = (1ull << firstBit) - 1;
@@ -30,16 +30,23 @@ constexpr BitWordType createMask(u32 firstBit, u32 lastBit)
 	return mask;
 }
 
-constexpr BitWordType readBitRangeAsValue(const BitWordType word, u32 lastBit)
+constexpr BitWordType readBits(const BitWordType word, u32 lastBit)
 {
 	const BitWordType mask = createMask(0, lastBit);
 	return word & mask;
 }
 
-constexpr BitWordType readBitRangeAsValue(const BitWordType word, u32 firstBit, u32 lastBit)
+constexpr BitWordType readBits(const BitWordType word, u32 firstBit, u32 lastBit)
 {
 	const BitWordType mask = createMask(firstBit, lastBit);
 	return (word & mask) >> firstBit;
+}
+
+constexpr void writeBits(BitWordType& destination, const BitWordType source, u32 firstBit, u32 lastBit)
+{
+	const BitWordType mask = createMask(firstBit, lastBit);
+	destination = destination & ~mask; // clear bits
+	destination |= ((source << firstBit) & mask);
 }
 
 constexpr bool hasDanglingPart(u32 numBits)

@@ -374,14 +374,14 @@ TEST(bitword_fixture, createMask_canGenerateOffsetBasedMasks)
 	}
 }
 
-TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
+TEST(bitword_fixture, readBits_AllOnesSameAsBitShiftedMask)
 {
 	const BitWordType word = bitword::Ones;
 
 	u32 firstIdx = 4;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
@@ -390,7 +390,7 @@ TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
 	firstIdx = 11;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
@@ -399,7 +399,7 @@ TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
 	firstIdx = 17;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
@@ -408,7 +408,7 @@ TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
 	firstIdx = 37;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
@@ -417,50 +417,87 @@ TEST(bitword_fixture, readBitRange_AllOnesSameAsBitShiftedMask)
 	firstIdx = 55;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
 	}
 
-	firstIdx = 63;
+	firstIdx = 62;
 	for (uint i = firstIdx + 1; i < NumBitsInWord; ++i)
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, firstIdx, i);
+		const BitWordType bits = bitword::readBits(word, firstIdx, i);
 		const BitWordType mask = bitword::createMask(firstIdx, i);
 		const BitWordType expected = mask >> firstIdx;
 		ASSERT_EQ(bits, expected);
 	}
 }
 
-TEST(bitword_fixture, readBitRangeAsValue_returnsValueAssociatedWithMask)
+TEST(bitword_fixture, readBits_returnsValueAssociatedWithMask)
 {
 	const BitWordType word = 0xEACAFE05FEFE;
 
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 4);
+		const BitWordType bits = bitword::readBits(word, 0, 4);
 		const BitWordType expected = word & 0xF;
 		ASSERT_EQ(bits, expected);
 	}
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 16);
+		const BitWordType bits = bitword::readBits(word, 0, 16);
 		const BitWordType expected = word & 0xFFFF;
 		ASSERT_EQ(bits, expected);
 	}
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, 0, 18);
+		const BitWordType bits = bitword::readBits(word, 0, 18);
 		const BitWordType expected = word & 0x3FFFF;
 		ASSERT_EQ(bits, expected);
 	}
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, 4, 18);
+		const BitWordType bits = bitword::readBits(word, 4, 18);
 		const BitWordType expected = (word >> 4) & 0x3FFF;
 		ASSERT_EQ(bits, expected);
 	}
 	{
-		const BitWordType bits = bitword::readBitRangeAsValue(word, 15, 31);
+		const BitWordType bits = bitword::readBits(word, 15, 31);
 		const BitWordType expected = (word >> 15) & 0xFFFF;
 		ASSERT_EQ(bits, expected);
+	}
+}
+
+TEST(bitword_fixture, writeBits_canReuseWord)
+{
+	BitWordType dst = {};
+
+	for(uint i=0; i < 70; ++i)
+	{
+		bitword::writeBits(dst, i, 0, 6); // overwrite data on the same bits
+		const BitWordType expected = i & bitword::createMask(0, 6);
+		ASSERT_EQ(dst, expected);
+	}
+}
+
+TEST(bitword_fixture, writeBits_handlesOffset)
+{
+	BitWordType dst = {};
+
+	for (uint i = 0; i < 70; ++i)
+	{
+		bitword::writeBits(dst, i, 2, 7); // overwrite data on the same bits
+		const BitWordType expected = (i << 2) & bitword::createMask(2, 7);
+		ASSERT_EQ(dst, expected);
+	}
+}
+
+TEST(bitword_fixture, writeBits_validateLastBits)
+{
+	BitWordType dst = {};
+
+	for (uint i = 0; i < 70; ++i)
+	{
+		const u32 FirstBit = 60;
+		bitword::writeBits(dst, i, FirstBit, 63); // overwrite data on the same bits
+		const BitWordType expected = (static_cast<BitWordType>(i) << FirstBit) & bitword::createMask(FirstBit, 63);
+		ASSERT_EQ(dst, expected);
 	}
 }
 
