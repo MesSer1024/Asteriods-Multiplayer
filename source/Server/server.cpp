@@ -133,6 +133,8 @@ void main()
 				if (slot != (u8)-1)
 				{
 					log_warning("client slot = %hu\n", slot);
+					ConnectionId connectionId;
+					connectionId.setIndex(slot);
 
 					outBuffer[0] = Server_Message::Join_Result;
 
@@ -140,7 +142,7 @@ void main()
 					outBuffer[1] = 1;
 
 					//Set third byte to the client ID, so that the client can use that when sending input message
-					memcpy(&outBuffer[2], &slot, 2);
+					outBuffer[2] = static_cast<u8>(connectionId.getIndex());
 
 					if (net::SendSocket(socket, outgoingPacket, from))
 					{
@@ -152,10 +154,10 @@ void main()
 						newObject.velocityY += static_cast<float32>(-cos(((float32)newObject.rotation / 180 * M_PI)));
 
 
-						client_endpoints[slot] = from;
-						time_since_heard_from_clients[slot] = 0.0f;
-						client_objects[slot] = newObject;
-						client_inputs[slot].reset();
+						client_endpoints[connectionId] = from;
+						time_since_heard_from_clients[connectionId] = 0.0f;
+						client_objects[connectionId] = newObject;
+						client_inputs[connectionId].reset();
 					}
 					else
 					{
@@ -177,42 +179,42 @@ void main()
 
 			case Client_Message::Leave:
 			{
-				u8 slot;
-				memcpy(&slot, &inBuffer[1], 2);
+				ConnectionId connectionId;
+				connectionId.setIndex(inBuffer[1]);
 
-				if (client_endpoints[slot] == from)
+				if (client_endpoints[connectionId] == from)
 				{
-					client_endpoints[slot] = {};
+					client_endpoints[connectionId] = {};
 					printf("Client_Message::Leave from %hu(%u:%hu)\n",
-						slot, from.address, from.port);
+						connectionId.getIndex(), from.address, from.port);
 				}
 				else
 				{
-					printf("Client_Message::Leave from %hu(%u:%hu), espected (%u:%hu)",
-						slot, from.address, from.port,
-						client_endpoints[slot].address, client_endpoints[slot].port);
+					printf("Client_Message::Leave from %hu(%u:%hu), expected (%u:%hu)",
+						connectionId.getIndex(), from.address, from.port,
+						client_endpoints[connectionId].address, client_endpoints[connectionId].port);
 				}
 			}
 			break;
 
 			case Client_Message::Input:
 			{
-				u8 clientId;
-				memcpy(&clientId, &inBuffer[1], sizeof(&inBuffer[1]));
+				ConnectionId connectionId;
+				connectionId.setIndex(inBuffer[1]);
 
 				//Check so that the ID matches where it comes from
-				if (client_endpoints[clientId] == from)
+				if (client_endpoints[connectionId] == from)
 				{
 					u8 input = inBuffer[2];
 
-					client_inputs[clientId].pressedConcepts = input;
+					client_inputs[connectionId].pressedConcepts = input;
 
-					time_since_heard_from_clients[clientId] = 0.0f;
+					time_since_heard_from_clients[connectionId] = 0.0f;
 
 				}
 				else
 				{
-					printf("Client address not matching i_Message::Input discarded, was from %u:%hu but expected %u:%hu\n", from.address, from.port, client_endpoints[clientId].address, client_endpoints[clientId].port);
+					printf("Client address not matching i_Message::Input discarded, was from %u:%hu but expected %u:%hu\n", from.address, from.port, client_endpoints[connectionId].address, client_endpoints[connectionId].port);
 				}
 			}
 			break;

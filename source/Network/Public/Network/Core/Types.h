@@ -24,4 +24,25 @@ namespace dud
 		LARGE_INTEGER clock_frequency;
 		bool sleep_granularity_was_set;
 	};
+
+	// #maybe : move to another layer
+	struct ConnectionId
+	{
+		enum { InvalidConnection = 0xFF };
+
+		ConnectionId() 
+			: _data(InvalidConnection)
+		{
+
+		}
+
+		bool isEstablished() const { return _data != InvalidConnection; }
+		u16 getIndex() const { return _data; }
+		void setIndex(u16 id) { _data = id; }
+
+		operator u16() const { return getIndex(); }
+
+	private:
+		u16 _data;
+	};
 }

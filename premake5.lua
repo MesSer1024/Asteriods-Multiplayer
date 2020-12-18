@@ -20,7 +20,8 @@ workspace "AsteroidsMP"
 	targetdir "bin/%{cfg.buildcfg}" -- output directory
 
 	libdirs { "ExternalLibs/SFML-2.5.1/lib/" }
-
+	defines { "NOMINMAX" } -- avoid issues with windows defining min/max macro
+	
 	filter { "platforms:Static" }
 	   kind "StaticLib"
 	   defines { "COMPILING_STATIC" }

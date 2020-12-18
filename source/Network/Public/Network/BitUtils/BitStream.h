@@ -3,8 +3,7 @@
 
 #include <Network/BitUtils/BitBuffer.h>
 #include <Network/BitUtils/BitWord.h>
-#include <tuple>
-#include <math.h>
+#include <algorithm>
 
 namespace dud
 {
@@ -126,7 +125,7 @@ namespace dud
 		{
 			constexpr u32 BufferSize = sizeof(_buffer);
 			const u32 inputSize = input.size();
-			const u32 byteCount = min(inputSize, BufferSize);
+			const u32 byteCount = std::min(inputSize, BufferSize);
 
 			memcpy(_buffer, input.data(), byteCount);
 
@@ -138,7 +137,7 @@ namespace dud
 		{
 			constexpr u32 BufferSize = sizeof(_buffer);
 			const u32 outputSize = output.size();
-			const u32 writtenBytes = min(outputSize, BufferSize);
+			const u32 writtenBytes = std::min(outputSize, BufferSize);
 
 			memcpy(output.data(), _buffer, writtenBytes);
 
