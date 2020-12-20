@@ -52,7 +52,11 @@ namespace dud
 
 		float32 readFloat(u32 numBits)
 		{
+#ifdef DEBUG
 			DUD_NOT_DEFINED;
+#else
+			DUD_NOT_DEFINED();
+#endif
 			return {}; // #todo
 		}
 
